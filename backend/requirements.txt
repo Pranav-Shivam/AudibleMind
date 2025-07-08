@@ -8,3 +8,5 @@ PyPDF2== 2.12.1
 python-multipart==0.0.6
 reportlab==3.6.13
 tiktoken==0.3.3
+ollama
+tqdm

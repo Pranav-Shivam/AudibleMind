@@ -86,14 +86,6 @@ Instructions:
 6. Provide clear, engaging explanations that enhance understanding
 7. User Instructions: {instructions}
 
-Available Explanation Styles:
-- "explain in simpler terms": Break down complex concepts into everyday language
-- "give me an overview": Provide a high-level summary of the main points
-- "explain technically": Detailed technical explanation with terminology
-- "give examples": Provide concrete examples and analogies
-- "break it down": Step-by-step breakdown of concepts
-- "compare and contrast": Highlight differences and similarities
-- "explain the significance": Why this paragraph matters in the broader context
 """
     
     def get_paragraph_parsing_sub_prompt(self) -> str:
@@ -138,6 +130,63 @@ EXPERIMENTAL RESULTS:
 - Connect to the research question
 - Highlight limitations and implications
 """
+
+    def get_chunk_summary_prompt(self, chunk: str) -> str:
+        prompt = f"""You are an expert educational summarizer with deep knowledge across technical and non-technical subjects.
+
+Your task is to read a given text chunk from a document and generate a simplified, self-explanatory summary that can be clearly understood by:
+- A curious 13-year-old (8th grade level), and
+- A Ph.D. researcher looking for conceptual clarity
+
+📌 Instructions:
+1. Read and understand the chunk completely — its purpose, content, and context.
+2. Capture the **core ideas** and **essential details** without skipping technical meaning.
+3. Rewrite the content into a **very clear**, **simple**, and **self-contained** explanation.
+4. Avoid jargon, or briefly explain it if unavoidable.
+5. Use simple analogies or real-world examples where helpful, but don’t oversimplify critical ideas.
+6. Do not assume prior knowledge from the reader.
+7. The summary should **preserve the integrity and nuance** of the original, but **simplify the language and flow**.
+
+🎯 Output:
+- Write the summary in a friendly, clear tone.
+- Format as a short paragraph or bullet points (if appropriate).
+- Do not include any external information — only what’s present in the input chunk.
+
+💡 Example tone: “Imagine you’re explaining this to both a sharp school kid and a brilliant researcher — they should both say ‘Now I get it!’ after reading.”
+
+<<<TEXT CHUNK STARTS BELOW>>>
+{chunk}
+<<<TEXT CHUNK ENDS>>>
+
+"""
+        return prompt
+    
+    def get_final_summary_prompt(self, combined_summaries: str) -> str:
+        final_summary_prompt = f"""
+You are an expert document summarizer and editor.
+
+You’ve been given a set of partial summaries, each created from a different section or paragraph of a larger document. Your task is to **carefully consolidate all of them** into a single, well-structured, polished final summary.
+
+🧠 Your Goals:
+1. Read through all the provided partial summaries.
+2. Merge them into **one coherent and logically flowing summary**.
+3. **Avoid repeating** the same ideas or facts — eliminate redundancy.
+4. **Preserve clarity, simplicity, and completeness** — even a curious 13-year-old should understand the result, but a Ph.D. reader should still find it useful.
+5. **Follow the original tone and style**: simple, self-contained, and explanatory.
+6. Maintain the **original integrity and key ideas** across all sections.
+7. Organize content in a natural flow — from high-level ideas to supporting details if appropriate.
+
+📌 Output Format:
+- A single, polished summary paragraph (or two short paragraphs, max).
+- No bullet points unless needed for clarity.
+- Do not add new information not present in the original summaries.
+
+📝 Preliminary summaries:
+{combined_summaries}
+
+✍️ Final, unified summary:
+"""
+        return final_summary_prompt
 
 
 
