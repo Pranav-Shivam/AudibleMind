@@ -1,4 +1,4 @@
-# AudibleMind - Task Tracking
+# AudibleMind - Task Tracking with status
 
 ## Project Overview
 **AudibleMind** is an intelligent document processing application that transforms complex documents into digestible, interactive content through AI-powered explanations and text-to-speech conversion.
