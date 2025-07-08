@@ -1,9 +1,20 @@
 from ast import literal_eval
-import re
+import re, uuid
 from core.configuration import *
 import openai
+import tiktoken
+
+EMBEDDING_ENCODING = "cl100k_base"
 
 
+def calculate_tokens(text):
+    encoding = tiktoken.get_encoding(EMBEDDING_ENCODING)
+    return len(encoding.encode(text))
+
+def generate_uid():
+    uid = str(uuid.uuid4())
+    uid = uid.replace('-', '')[:32]
+    return uid
 
 def openai_request(messages,
                            model,

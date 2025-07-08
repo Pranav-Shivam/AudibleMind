@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File, Request, Depends
 
 
 
@@ -11,3 +12,6 @@ def test():
 
 
 
+@document_router.post("/document/upload-file")
+def upload_file(user_prompt:str, file: UploadFile = File(...)):
+    pass
