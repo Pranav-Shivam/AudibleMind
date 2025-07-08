@@ -38,17 +38,20 @@ class DocumentService:
         data, structured_data = extract_pdf_using_adobe(file, document_id)
         paras,pages = adjust_para_tokens(data,MAX_PARA_LENGTH,30)
 
-        file_summary = generate_file_summary(paras) # TODO:- pranav
+        file_summary = "generate_file_summary(paras)" # TODO:- pranav
         doc_model.file_summary = file_summary
-        document_id = self.couch_client.save_to_db(COUCH_DOCUMENT_DB_NAME, doc_model)
+        self.couch_client.save_to_db(COUCH_DOCUMENT_DB_NAME, doc_model)
 
         for para in paras:
-            pass
-
-
-
-
-
+            pid = generate_uid()
+            doc = ParagraphModel(_id=pid,
+                                 text=para)
+            self.couch_client.save_to_db(COUCH_PARAGRAPH_DB_NAME, doc)
+        
+        with open('user_prompt.json','w') as f:
+            json.dump({'user_prompt': user_prompt}, f)
+        
+        return 
 
     
     def create_pdf_doc(self, file_name):

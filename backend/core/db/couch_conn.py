@@ -1,5 +1,5 @@
 import couchdb
-from configuration import *
+from core.configuration import *
 
 
 class CouchDBConnection:

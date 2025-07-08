@@ -11,6 +11,7 @@ COUCH_PORT = os.environ.get("COUCH_PORT",5984)
 
 COUCH_PDF_DB_NAME = "aud_pdf"
 COUCH_DOCUMENT_DB_NAME = "aud_documents"
+COUCH_PARAGRAPH_DB_NAME = "aud_paras"
 
 OPENAI_KEY = os.environ.get("OPENAI_KEY")
 OPENAI_MODEL = ""
