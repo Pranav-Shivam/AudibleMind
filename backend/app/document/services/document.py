@@ -47,11 +47,12 @@ class DocumentService:
             doc = ParagraphModel(_id=pid,
                                  text=para)
             self.couch_client.save_to_db(COUCH_PARAGRAPH_DB_NAME, doc)
+        print(f"{len(paras)} extracted successfully!")
         
         with open('user_prompt.json','w') as f:
             json.dump({'user_prompt': user_prompt}, f)
-        
-        return 
+        print("user prompt saved")
+        return document_id
 
     
     def create_pdf_doc(self, file_name):
