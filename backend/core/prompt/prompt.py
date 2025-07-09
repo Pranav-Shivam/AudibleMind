@@ -161,41 +161,64 @@ Your task is to read a given text chunk from a document and generate a simplifie
 """
         return prompt
     
+    def get_group_chunk_summary_prompt(self, combined_chunks: str) -> str:
+    #     group_chunk_summary_prompt = f"""
+    # You are an expert language model summarizer, editor, and educator.
+
+    # You have received multiple content chunks from a document. Each chunk represents a different section or paragraph. Your job is to consolidate all of them into a **clear, accurate, and logically structured summary**.
+
+    # 🎯 Objectives:
+    # 1. **Fully understand** the meaning and intent of each chunk.
+    # 2. **Merge them into a single, coherent summary**, keeping the structure and flow natural.
+    # 3. **Eliminate any repetition or redundancy** across chunks.
+    # 4. Retain the **original meaning, integrity, and technical value** of the content.
+    # 5. Do **not include external facts or assumptions**.
+
+    # 📦 Output Guidelines:
+    # - Ensure all major points and concepts are preserved.
+    # - No headings or formatting beyond plain text.
+
+    # 📝 Document Chunks to summarize:
+    # {combined_chunks}
+
+    # ✍️ Final draft summary:
+    # """
+    
+        group_chunk_summary_prompt = f"""
+You are a world-class summarization expert. Condense the following document chunks into one concise, accurate, and logically ordered summary. Remove redundancy, preserve all key points and technical integrity, and add nothing beyond the source.
+
+📝 Input chunks:
+{combined_chunks}
+
+✍️ Final summary:
+"""
+        return group_chunk_summary_prompt
+    
+    
     def get_final_summary_prompt(self, combined_summaries: str) -> str:
+        
+    #         🧠 Your Responsibilities:
+    # 1. Carefully read the provided summaries to understand the full document.
+    # 2. Consolidate them into a single summary that:
+    # - Is **clear, well-structured, and self-contained**
+    # - **Avoids repetition** and eliminates overlaps
+    # - Preserves **all key ideas and technical insights**
+    # - Matches the **tone and clarity expected in the original prompt** (i.e., understandable by a school student and insightful to a researcher)
+    # 3. Maintain **neutral tone**, no personal opinions or added commentary.
+    # 4. Ensure the summary is ready for presentation, reporting, or further simplification.
+        
+        
         final_summary_prompt = f"""
-You are an expert document summarizer and editor.
+Rewrite the following summaries into one clear and cohesive summary. Eliminate any repetition, and maintain the accuracy and integrity of the original summaries.
 
-You’ve been given a set of partial summaries, each created from a different section or paragraph of a larger document. Your task is to **carefully consolidate all of them** into a single, well-structured, polished final summary.
-
-🧠 Your Goals:
-1. Read through all the provided partial summaries.
-2. Merge them into **one coherent and logically flowing summary**.
-3. **Avoid repeating** the same ideas or facts — eliminate redundancy.
-4. **Preserve clarity, simplicity, and completeness** — even a curious 13-year-old should understand the result, but a Ph.D. reader should still find it useful.
-5. **Follow the original tone and style**: simple, self-contained, and explanatory.
-6. Maintain the **original integrity and key ideas** across all sections.
-7. Organize content in a natural flow — from high-level ideas to supporting details if appropriate.
-
-📌 Output Format:
-- A single, polished summary paragraph (or two short paragraphs, max).
-- No bullet points unless needed for clarity.
-- Do not add new information not present in the original summaries.
-
-📝 Preliminary summaries:
+📝 Preliminary summaries to merge:
 {combined_summaries}
 
 ✍️ Final, unified summary:
 """
+
+
         return final_summary_prompt
-
-
-
-
-
-
-
-
-
-
+    
 
 

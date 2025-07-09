@@ -23,3 +23,6 @@ ADOBE_CLIENT_SECRET = os.environ.get("ADOBE_CLIENT_SECRET","p8e-g2otO2nUCz1UYhvJ
 
 
 MAX_PARA_LENGTH = 500
+
+OLLAMA_MODEL = "llama3:8b-instruct-q4_K_M"
+CHUNK_SIZE = 2500

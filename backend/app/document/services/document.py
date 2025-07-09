@@ -5,14 +5,14 @@ from core.utils.pdf_extraction_utils import extract_pdf_using_adobe
 from core.utils.adobe_parser import adjust_para_tokens
 from app.document.models.document import *
 from datetime import datetime
-from core.ollama_setup.document_summary import PDFSummarizer
+from core.ollama_setup.document_summary import DocumentSummarizer
 import json
 
 class DocumentService:
     def __init__(self):
         self.couch_client = CouchDBConnection()
         self.db = self.couch_client.get_db(COUCH_PDF_DB_NAME)
-        self.pdf_summarizer = PDFSummarizer()
+        self.document_summarizer = DocumentSummarizer()
         
     def upload_file(self, user_prompt, file):
         file.file.seek(0)
@@ -43,7 +43,7 @@ class DocumentService:
         for i in range(len(paras)):
             all_paras += f"Page {pages[i]}: {paras[i]}\n"
 
-        file_summary = self.pdf_summarizer.summarize_document(all_paras, user_prompt)
+        file_summary = self.document_summarizer.summarize_document(all_paras, user_prompt)
         doc_model.file_summary = file_summary
         self.couch_client.save_to_db(COUCH_DOCUMENT_DB_NAME, doc_model)
 
