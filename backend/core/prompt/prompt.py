@@ -220,5 +220,11 @@ Rewrite the following summaries into one clear and cohesive summary. Eliminate a
 
         return final_summary_prompt
     
+    def get_normal_prompt(self, prompt: str) -> str:
+        
+        return f"""
+    Please explain the topic in detail from scratch, assuming I am a complete beginner. Break it down step by step in simple terms. Cover all relevant aspects—what it is, why it matters, how it works, and where it’s used. Don’t jump into code yet; I want to build a strong conceptual foundation first. Use analogies, examples, and your expert knowledge or research to make it as clear and understandable as possible. Go as deep as needed, but keep the language simple and accessible. 
+    """
+    
 
 

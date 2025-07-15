@@ -1,0 +1,63 @@
+2025-07-15 22:53:12.843 | INFO     | core.logger:setup_logger:106 | 🚀 Loguru logger initialized successfully
+2025-07-15 22:53:13.838 | INFO     | core.logger:log_startup_info:194 | Starting AudibleMind Backend
+2025-07-15 22:53:13.838 | INFO     | __main__:<module>:26 | 🌐 Configuring CORS for origins: ['http://localhost:3000', 'http://localhost:8000', 'http://localhost:5173']
+2025-07-15 22:53:13.840 | INFO     | __main__:<module>:95 | 📋 Registering API routers
+2025-07-15 22:53:13.842 | INFO     | __main__:<module>:98 | ✅ All routers registered successfully
+2025-07-15 22:53:13.842 | INFO     | __main__:<module>:101 | 🌟 Starting server on 0.0.0.0:8001
+2025-07-15 22:53:13.858 | INFO     | core.logger:log_startup_info:194 | Starting AudibleMind Backend
+2025-07-15 22:53:13.858 | INFO     | main:<module>:26 | 🌐 Configuring CORS for origins: ['http://localhost:3000', 'http://localhost:8000', 'http://localhost:5173']
+2025-07-15 22:53:13.859 | INFO     | main:<module>:95 | 📋 Registering API routers
+2025-07-15 22:53:13.861 | INFO     | main:<module>:98 | ✅ All routers registered successfully
+2025-07-15 22:53:13.862 | INFO     | main:startup_event:65 | 🚀 FastAPI application starting up
+2025-07-15 22:53:13.866 | INFO     | main:startup_event:71 | 💻 System Info - CPU: 28 cores, Memory: 15GB total, 4GB available
+2025-07-15 22:53:13.866 | INFO     | main:startup_event:74 | ⚙️ Configuration - Environment: development, Debug: False
+2025-07-15 22:53:13.866 | INFO     | main:startup_event:75 | 🗄️ Database - Host: localhost:5984
+2025-07-15 22:53:13.867 | INFO     | main:startup_event:76 | 🤖 LLM Provider - Default: ollama
+2025-07-15 22:53:13.868 | INFO     | core.db.couch_conn:__init__:13 | 🗄️ Initializing CouchDB connection to localhost:5984
+2025-07-15 22:53:16.758 | SUCCESS  | core.db.couch_conn:__init__:21 | ✅ CouchDB connection established successfully - Version: 3.4.2
+2025-07-15 22:53:16.760 | INFO     | core.logger:log_performance:169 | Performance: couchdb_connection
+2025-07-15 22:53:16.775 | SUCCESS  | main:startup_event:83 | ✅ Database connection established successfully
+2025-07-15 22:53:36.741 | INFO     | main:log_requests:41 | 🔄 Incoming request: OPTIONS /api/v1/generate-conversation
+2025-07-15 22:53:36.742 | INFO     | core.logger:log_api_request:128 | API OPTIONS /api/v1/generate-conversation - 200
+2025-07-15 22:53:36.749 | INFO     | main:log_requests:41 | 🔄 Incoming request: POST /api/v1/generate-conversation
+2025-07-15 22:53:36.752 | INFO     | api.chats.chats:get_llm_client:48 | 🔧 Creating LLM client
+2025-07-15 22:53:36.753 | INFO     | chats.chats:__init__:253 | 🔧 Initializing Local LLM client with model: llama3:8b-instruct-q4_K_M
+2025-07-15 22:53:36.754 | INFO     | chats.chats:__init__:154 | 🦙 Initializing Ollama connector with model: llama3:8b-instruct-q4_K_M
+2025-07-15 22:53:37.809 | SUCCESS  | chats.chats:__init__:159 | ✅ Ollama client initialized successfully
+2025-07-15 22:53:37.810 | INFO     | chats.chats:test_connection:271 | 🔍 Testing Local LLM connection
+2025-07-15 22:53:37.812 | INFO     | chats.chats:test_connection:229 | 🔍 Testing Ollama connection
+2025-07-15 22:53:38.033 | SUCCESS  | chats.chats:test_connection:237 | ✅ Ollama connection test successful - Model llama3:8b-instruct-q4_K_M available
+2025-07-15 22:53:38.034 | SUCCESS  | api.chats.chats:get_llm_client:87 | ✅ Local LLM client created and tested successfully
+2025-07-15 22:53:38.034 | INFO     | api.chats.chats:generate_conversation:136 | 🚀 Starting conversation generation
+2025-07-15 22:53:38.038 | INFO     | api.chats.chats:generate_conversation:154 | 📝 Processing paragraph
+2025-07-15 22:53:38.039 | INFO     | chats.chats:__init__:424 | 🎓 Initializing EducationConversationSystem
+2025-07-15 22:53:38.039 | INFO     | chats.chats:__init__:449 | 👥 Active personas: Pranav, Prem
+2025-07-15 22:53:38.039 | DEBUG    | api.chats.chats:generate_conversation:173 | ⚙️ Conversation system initialized
+2025-07-15 22:53:38.039 | INFO     | chats.chats:generate_conversation:458 | 🚀 Starting conversation generation
+2025-07-15 22:53:38.040 | INFO     | chats.chats:generate_conversation:473 | 📝 Generating initial explanation from Pranav
+2025-07-15 22:53:38.040 | DEBUG    | chats.chats:generate:257 | 🎯 Local LLM generate call
+2025-07-15 22:53:38.040 | INFO     | chats.chats:make_ollama_call:173 | 🚀 Making Ollama call
+2025-07-15 22:54:03.179 | INFO     | core.logger:log_llm_operation:156 | LLM ollama call with llama3:8b-instruct-q4_K_M
+2025-07-15 22:54:03.180 | SUCCESS  | chats.chats:make_ollama_call:203 | ✅ Ollama call completed successfully
+2025-07-15 22:54:03.181 | SUCCESS  | chats.chats:generate_conversation:481 | ✅ Initial explanation generated
+2025-07-15 22:54:03.189 | DEBUG    | chats.chats:add_turn:643 | ➕ Added turn: Pranav
+2025-07-15 22:54:03.190 | INFO     | chats.chats:generate_conversation:492 | 🔄 Generating conversation turn 1/1
+2025-07-15 22:54:03.190 | DEBUG    | chats.chats:generate_conversation:533 | 🧠 Processing Prem (advanced) interaction
+2025-07-15 22:54:03.190 | DEBUG    | chats.chats:generate:257 | 🎯 Local LLM generate call
+2025-07-15 22:54:03.191 | INFO     | chats.chats:make_ollama_call:173 | 🚀 Making Ollama call
+2025-07-15 22:54:07.532 | INFO     | core.logger:log_llm_operation:156 | LLM ollama call with llama3:8b-instruct-q4_K_M
+2025-07-15 22:54:07.535 | SUCCESS  | chats.chats:make_ollama_call:203 | ✅ Ollama call completed successfully
+2025-07-15 22:54:07.537 | INFO     | chats.chats:generate_conversation:546 | 🎯 Generated Pranav-led question for Prem
+2025-07-15 22:54:07.540 | DEBUG    | chats.chats:add_turn:643 | ➕ Added turn: Prem
+2025-07-15 22:54:07.540 | DEBUG    | chats.chats:generate:257 | 🎯 Local LLM generate call
+2025-07-15 22:54:07.540 | INFO     | chats.chats:make_ollama_call:173 | 🚀 Making Ollama call
+2025-07-15 22:54:31.386 | INFO     | core.logger:log_llm_operation:156 | LLM ollama call with llama3:8b-instruct-q4_K_M
+2025-07-15 22:54:31.388 | SUCCESS  | chats.chats:make_ollama_call:203 | ✅ Ollama call completed successfully
+2025-07-15 22:54:31.390 | DEBUG    | chats.chats:generate_conversation:560 | 🔬 Pranav answered Prem
+2025-07-15 22:54:31.390 | DEBUG    | chats.chats:add_turn:643 | ➕ Added turn: Pranav
+2025-07-15 22:54:31.390 | INFO     | chats.chats:generate_conversation:569 | ✅ Completed turn 1/1
+2025-07-15 22:54:31.390 | SUCCESS  | chats.chats:generate_conversation:575 | 🎉 Conversation generation completed successfully
+2025-07-15 22:54:31.391 | INFO     | core.logger:log_performance:169 | Performance: conversation_generation
+2025-07-15 22:54:31.391 | SUCCESS  | api.chats.chats:generate_conversation:208 | 🎉 Conversation generated successfully
+2025-07-15 22:54:31.397 | INFO     | core.logger:log_performance:169 | Performance: api_conversation_generation
+2025-07-15 22:54:31.401 | INFO     | core.logger:log_api_request:128 | API POST /api/v1/generate-conversation - 200
