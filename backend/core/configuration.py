@@ -15,6 +15,7 @@ class DatabaseConfig:
     pdf_db_name: str = "aud_pdf"
     document_db_name: str = "aud_documents"
     paragraph_db_name: str = "aud_paras"
+    chunk_db_name: str = "aud_chunks"
 
 
 @dataclass
@@ -29,7 +30,7 @@ class ServerConfig:
 @dataclass
 class OllamaConfig:
     """Ollama configuration settings"""
-    model: str = os.getenv("OLLAMA_MODEL", "deepseek-r1:7b")
+    model: str = os.getenv("OLLAMA_MODEL", "llama3:8b-instruct-q4_K_M")
     temperature: float = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
     max_tokens: int = int(os.getenv("OLLAMA_MAX_TOKENS", "1000"))
     top_p: float = float(os.getenv("OLLAMA_TOP_P", "0.9"))
@@ -55,7 +56,7 @@ class AdobeConfig:
 @dataclass
 class ProcessingConfig:
     """Text processing configuration settings"""
-    max_paragraph_length: int = int(os.getenv("MAX_PARA_LENGTH", "500"))
+    max_paragraph_length: int = int(os.getenv("MAX_PARA_LENGTH", "700"))
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "2500"))
     max_history_tokens: int = int(os.getenv("MAX_HISTORY_TOKENS", "1000"))
 
@@ -68,7 +69,7 @@ class AppConfig:
     rate_limit_per_minute: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     log_file: str = os.getenv("LOG_FILE", "app.log")
-    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000,http://localhost:5173")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8001,http://localhost:5173")
 
 
 class Config:
@@ -119,6 +120,7 @@ COUCH_PORT = config.database.port
 COUCH_PDF_DB_NAME = config.database.pdf_db_name
 COUCH_DOCUMENT_DB_NAME = config.database.document_db_name
 COUCH_PARAGRAPH_DB_NAME = config.database.paragraph_db_name
+COUCH_CHUNK_DB_NAME = config.database.chunk_db_name
 
 OPENAI_KEY = config.openai.api_key
 OPENAI_MODEL = config.openai.model

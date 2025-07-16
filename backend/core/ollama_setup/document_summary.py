@@ -83,6 +83,40 @@ class DocumentSummarizer:
         
         return summary
     
+    def summarize_chunk(self, chunk_content: str, user_prompt: str = "") -> str:
+        """Summarize a single chunk of text on-demand"""
+        start_time = time.time()
+        
+        logger.info(f"📝 Summarizing individual chunk", extra={
+            "content_length": len(chunk_content),
+            "user_prompt_length": len(user_prompt)
+        })
+        
+        # Use the chunk summary prompt
+        system_prompt = self.prompt_manager.get_chunk_summary_prompt(chunk_content)
+        token_count = self.ollama_connector.count_tokens(system_prompt)
+        
+        logger.debug(f"📝 Chunk summary prompt prepared", extra={
+            "token_count": token_count,
+            "prompt_length": len(system_prompt)
+        })
+        
+        summary = self.ollama_connector.make_ollama_call(system_prompt, temperature=0.3, max_tokens=800)
+        
+        duration = (time.time() - start_time) * 1000
+        logger.success(f"✅ Chunk summarized", extra={
+            "summary_length": len(summary),
+            "duration": round(duration, 2),
+            "token_count": token_count
+        })
+        
+        LoggerUtils.log_performance("chunk_summarization", duration,
+                                  content_length=len(chunk_content),
+                                  summary_length=len(summary),
+                                  token_count=token_count)
+        
+        return summary
+    
     def get_final_summary(self, intermediate_summaries: List[str], user_prompt: str) -> str:
         start_time = time.time()
         combined_summaries = "\n\n---\n\n".join(intermediate_summaries)

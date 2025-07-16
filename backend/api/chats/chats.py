@@ -19,7 +19,7 @@ class TechnicalParagraphRequest(BaseModel):
     llm_provider: Optional[str] = Field(default="openai", description="LLM provider: 'openai' or 'local'")
     api_key: Optional[str] = Field(default=None, description="OpenAI API key (optional if set in environment)")
     model: Optional[str] = Field(default="gpt-4o", description="OpenAI model to use")
-    local_model: Optional[str] = Field(default="deepseek-r1:7b", description="Local Ollama model to use")
+    local_model: Optional[str] = Field(default="llama3:8b-instruct-q4_K_M", description="Local Ollama model to use")
     include_shivam: Optional[bool] = Field(default=True, description="Include Shivam (beginner learner) in the conversation")
     include_prem: Optional[bool] = Field(default=True, description="Include Prem (advanced learner) in the conversation")
     shivam_description: Optional[str] = Field(default=None, description="Custom description for Shivam's persona")
@@ -143,13 +143,17 @@ async def generate_conversation(
     })
     
     try:
-        # Validate that at least one learner is included
-        if not request.include_shivam and not request.include_prem:
-            logger.error("❌ No learners included in request", extra={"request_id": request_id})
-            raise HTTPException(
-                status_code=400,
-                detail="At least one learner (Shivam or Prem) must be included in the conversation"
-            )
+        # Check if this is a direct mode (no learners, just Pranav's explanation)
+        is_direct_mode = not request.include_shivam and not request.include_prem
+        
+        if is_direct_mode:
+            logger.info(f"📝 Direct mode: Generating Pranav's explanation only", extra={"request_id": request_id})
+        else:
+            logger.info(f"📝 Multi-persona mode: Including learners", extra={
+                "request_id": request_id,
+                "include_shivam": request.include_shivam,
+                "include_prem": request.include_prem
+            })
         
         logger.info(f"📝 Processing paragraph", extra={
             "request_id": request_id,
@@ -181,7 +185,8 @@ async def generate_conversation(
             request.paragraph,
             shivam_questions=request.shivam_questions,
             prem_questions=request.prem_questions,
-            num_questions_per_learner=request.num_questions_per_learner
+            num_questions_per_learner=request.num_questions_per_learner,
+            direct_mode=is_direct_mode
         )
         conversation_duration = (time.time() - conversation_start) * 1000
         

@@ -451,12 +451,14 @@ class EducationConversationSystem:
     def generate_conversation(self, technical_paragraph: str, 
                             shivam_questions: List[str] = None, 
                             prem_questions: List[str] = None,
-                            num_questions_per_learner: int = None) -> List[ConversationTurn]:
+                            num_questions_per_learner: int = None,
+                            direct_mode: bool = False) -> List[ConversationTurn]:
         """Generate a complete educational conversation with user-provided or auto-generated questions"""
         start_time = time.time()
         
         logger.info(f"🚀 Starting conversation generation", extra={
             "paragraph_length": len(technical_paragraph),
+            "direct_mode": direct_mode,
             "shivam_questions_provided": len(shivam_questions) if shivam_questions else 0,
             "prem_questions_provided": len(prem_questions) if prem_questions else 0,
             "num_questions_per_learner": num_questions_per_learner or self.max_turns_per_learner
@@ -485,6 +487,16 @@ class EducationConversationSystem:
             
             self.add_turn(Role.PRANAV, pranav_initial_explanation)
             self.dialogue_manager.update_context(pranav_initial_explanation)
+
+            # If in direct mode, return just the initial explanation
+            if direct_mode:
+                logger.info("🎯 Direct mode: Returning Pranav's explanation only")
+                total_duration = (time.time() - start_time) * 1000
+                logger.success(f"🎉 Direct mode conversation completed", extra={
+                    "total_turns": len(self.conversation_history),
+                    "total_duration": round(total_duration, 2)
+                })
+                return self.conversation_history
 
             # Process questions for each learner
             for i in range(num_questions):
