@@ -1,8 +1,9 @@
 from core.db.couch_conn import CouchDBConnection
 from core.configuration import *
 from core.utils.helper import generate_uid
-from core.utils.pdf_extraction_utils import extract_pdf_using_adobe
+from core.utils.pdf_extraction_utils import extract_pdf_using_adobe, extract_pdf_by_pages, process_page_content
 from core.utils.adobe_parser import adjust_para_tokens
+from core.utils.pdf_chunking import PDFChunker
 from app.document.models.document import *
 from datetime import datetime
 from core.ollama_setup.document_summary import DocumentSummarizer
@@ -11,6 +12,7 @@ from core.logger import logger, LoggerUtils
 import json
 import time
 import os
+from typing import Dict, List
 
 class DocumentService:
     def __init__(self):
@@ -32,11 +34,11 @@ class DocumentService:
         })
         
     def upload_file(self, user_prompt, file):
-        """Process and upload a PDF file with comprehensive logging"""
+        """Process and upload a PDF file with comprehensive logging using page-level chunking"""
         start_time = time.time()
         upload_id = f"upload_{int(start_time * 1000)}"
         
-        logger.info(f"🚀 Starting file upload process", extra={
+        logger.info(f"🚀 Starting file upload process with page-level chunking", extra={
             "upload_id": upload_id,
             "filename": file.filename,
             "user_prompt_length": len(user_prompt)
@@ -93,70 +95,114 @@ class DocumentService:
                 "upload_duration": round(pdf_upload_duration, 2)
             })
 
-            # Extract PDF using Adobe
+            # Extract PDF using Adobe with page-level processing
             extraction_start = time.time()
-            logger.info(f"🔍 Starting PDF extraction with Adobe", extra={
+            logger.info(f"🔍 Starting page-level PDF extraction with Adobe", extra={
                 "upload_id": upload_id,
                 "document_id": document_id
             })
             
-            data, structured_data = extract_pdf_using_adobe(file, document_id)
+            # Use the new page-level extraction
+            data, page_grouped_data = extract_pdf_by_pages(file, document_id)
             extraction_duration = (time.time() - extraction_start) * 1000
             
-            logger.success(f"✂️ PDF extraction completed", extra={
+            logger.success(f"✂️ Page-level PDF extraction completed", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
                 "extraction_duration": round(extraction_duration, 2),
-                "extracted_length": len(data) if data else 0
+                "extracted_length": len(data) if data else 0,
+                "pages_found": len(page_grouped_data)
             })
             
-            # Process paragraphs
+            # Process pages and create chunks using page-level PDFChunker
             para_process_start = time.time()
-            paras, pages = adjust_para_tokens(data, MAX_PARA_LENGTH, 30)
             
-            all_paras = ""
-            for i in range(len(paras)):
-                all_paras += f"Page {pages[i]}: {paras[i]}\n"
+            # Convert page-grouped data to text format for each page
+            pages_text_data = {}
+            for page_num, page_elements in page_grouped_data.items():
+                page_text = ""
+                for item in page_elements:
+                    if 'text' in item:
+                        page_text += f"{item['text']}\n"
+                pages_text_data[page_num] = page_text
             
             para_process_duration = (time.time() - para_process_start) * 1000
-            logger.info(f"📝 Paragraphs processed", extra={
+            logger.info(f"📝 Pages processed for chunking", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
-                "paragraph_count": len(paras),
+                "pages_count": len(pages_text_data),
                 "process_duration": round(para_process_duration, 2),
-                "total_text_length": len(all_paras)
+                "total_text_length": sum(len(text) for text in pages_text_data.values())
             })
 
-            # Create chunks using original logic
+            # Create chunks using page-level PDFChunker
             chunk_start = time.time()
-            logger.info(f"✂️ Creating dynamic chunks from paragraphs", extra={
+            logger.info(f"✂️ Creating page-level intelligent chunks using PDFChunker", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
-                "total_paragraphs": len(paras),
-                "text_length": len(all_paras)
+                "pages_count": len(pages_text_data)
             })
             
-            # Use the original chunking logic - dynamic based on content
-            cleaned_text = self.text_processing.clean_text(all_paras)
-            raw_chunks = self.text_processing.chunk_text(cleaned_text, CHUNK_SIZE)
+            # Use PDFChunker for page-level chunking with improved semantic chunking
+            chunker = PDFChunker(max_tokens_per_chunk=500, overlap_tokens=20)
+            pdf_chunks = chunker.process_multiple_pages(pages_text_data, document_id)
             
-            # Convert to our chunk format with metadata
+            # Convert chunker format to our existing format, filtering out empty chunks
             chunks = []
-            for i, chunk_content in enumerate(raw_chunks):
-                token_count = len(chunk_content) // 4  # Rough estimate: 1 token ≈ 4 characters
-                chunks.append({
-                    'content': chunk_content,
-                    'token_count': token_count
+            chunk_index = 0
+            max_allowed_tokens = 500  # Slightly higher than chunker's 450 for safety
+            
+            for chunk in pdf_chunks:
+                # Skip empty section headers
+                if chunk.get('is_empty', False):
+                    logger.debug(f"⏭️ Skipping empty section chunk: {chunk.get('title', 'Unknown')}")
+                    continue
+                
+                # Only include chunks with actual content
+                if chunk.get('content', '').strip():
+                    token_count = chunk['token_count']
+                    
+                    # Validate token count
+                    if token_count > max_allowed_tokens:
+                        logger.warning(f"⚠️ Chunk exceeds token limit: {token_count} > {max_allowed_tokens}", extra={
+                            "upload_id": upload_id,
+                            "document_id": document_id,
+                            "chunk_id": chunk.get('id', 'Unknown'),
+                            "page_number": chunk.get('page_number', 'Unknown'),
+                            "content_preview": chunk['content'][:100] + "..." if len(chunk['content']) > 100 else chunk['content']
+                        })
+                    
+                    chunks.append({
+                        'content': chunk['content'],
+                        'token_count': token_count,
+                        'chunk_index': chunk_index,  # Use sequential indexing
+                        'page_number': chunk.get('page_number', 0),  # Add page number
+                        'document_id': document_id  # Add document ID
+                    })
+                    chunk_index += 1
+                else:
+                    logger.debug(f"⏭️ Skipping chunk with empty content: {chunk.get('id', 'Unknown')}")
+            
+            # Final validation
+            oversized_chunks = [chunk for chunk in chunks if chunk['token_count'] > max_allowed_tokens]
+            if oversized_chunks:
+                logger.warning(f"⚠️ Found {len(oversized_chunks)} chunks exceeding token limit", extra={
+                    "upload_id": upload_id,
+                    "document_id": document_id,
+                    "oversized_count": len(oversized_chunks),
+                    "max_tokens_found": max(chunk['token_count'] for chunk in oversized_chunks)
                 })
             
             chunk_duration = (time.time() - chunk_start) * 1000
             
-            logger.success(f"📦 Created {len(chunks)} dynamic chunks", extra={
+            logger.success(f"📦 Created {len(chunks)} page-level intelligent chunks", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
                 "chunks_created": len(chunks),
                 "chunk_duration": round(chunk_duration, 2),
-                "chunk_size": CHUNK_SIZE
+                "pages_processed": len(pages_text_data),
+                "average_tokens": sum(chunk['token_count'] for chunk in chunks) // len(chunks) if chunks else 0,
+                "max_tokens": max(chunk['token_count'] for chunk in chunks) if chunks else 0
             })
             
             # Update document with chunk count (no auto-summary)
@@ -167,21 +213,22 @@ class DocumentService:
             chunk_save_start = time.time()
             saved_chunks = 0
             
-            for chunk_index, chunk in enumerate(chunks):
+            for chunk_data in chunks:
                 chunk_id = generate_uid()
                 chunk_model = ChunkModel(
                     _id=chunk_id,
                     document_id=document_id,
-                    chunk_index=chunk_index,
-                    content=chunk['content'],
+                    chunk_index=chunk_data['chunk_index'], # Use the sequential chunk_index
+                    content=chunk_data['content'],
                     summary="",  # Will be populated on-demand
-                    token_count=chunk['token_count']
+                    token_count=chunk_data['token_count'],
+                    page_number=chunk_data['page_number']  # Add page number metadata
                 )
                 self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, chunk_model)
                 saved_chunks += 1
             
             chunk_save_duration = (time.time() - chunk_save_start) * 1000
-            logger.success(f"💾 Chunks saved to database", extra={
+            logger.success(f"💾 Page-level chunks saved to database", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
                 "saved_chunks": saved_chunks,
@@ -202,20 +249,20 @@ class DocumentService:
             # Calculate total processing time
             total_duration = (time.time() - start_time) * 1000
             
-            logger.success(f"🎉 File upload process completed successfully", extra={
+            logger.success(f"🎉 Page-level file upload process completed successfully", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
                 "filename": filename,
                 "total_duration": round(total_duration, 2),
                 "file_size_bytes": file_size,
-                "paragraphs_extracted": len(paras),
+                "pages_processed": len(pages_text_data),
                 "chunks_created": len(chunks)
             })
             
             # Log performance metrics
-            LoggerUtils.log_performance("document_upload", total_duration,
+            LoggerUtils.log_performance("document_upload_page_level", total_duration,
                                       file_size=file_size,
-                                      paragraphs=len(paras),
+                                      pages_processed=len(pages_text_data),
                                       chunks_created=len(chunks),
                                       extraction_duration=extraction_duration,
                                       chunk_duration=chunk_duration)
@@ -224,14 +271,14 @@ class DocumentService:
             
         except Exception as e:
             total_duration = (time.time() - start_time) * 1000
-            logger.error(f"❌ File upload process failed: {str(e)}", extra={
+            logger.error(f"❌ Page-level file upload process failed: {str(e)}", extra={
                 "upload_id": upload_id,
                 "filename": file.filename if hasattr(file, 'filename') else 'unknown',
                 "duration": round(total_duration, 2),
                 "error_type": type(e).__name__
             })
             LoggerUtils.log_error_with_context(e, {
-                "component": "document_upload",
+                "component": "document_upload_page_level",
                 "upload_id": upload_id,
                 "filename": file.filename if hasattr(file, 'filename') else 'unknown',
                 "duration": total_duration
@@ -255,7 +302,8 @@ class DocumentService:
                             'chunk_index': chunk_doc.get('chunk_index', 0),
                             'content': chunk_doc.get('content', ''),
                             'summary': chunk_doc.get('summary', ''),
-                            'token_count': chunk_doc.get('token_count', 0)
+                            'token_count': chunk_doc.get('token_count', 0),
+                            'page_number': chunk_doc.get('page_number', 0)  # Include page number
                         })
                 except Exception as e:
                     logger.warning(f"⚠️ Skipping invalid chunk document: {doc_id}")
@@ -274,6 +322,109 @@ class DocumentService:
         except Exception as e:
             logger.error(f"❌ Error retrieving chunks for document {document_id}: {str(e)}")
             return []
+
+    def get_chunks_by_page(self, document_id: str, page_number: int = None):
+        """
+        Get chunks for a document, optionally filtered by page number.
+        
+        Args:
+            document_id: The document ID
+            page_number: Optional page number to filter by (0-indexed)
+            
+        Returns:
+            List of chunks, optionally filtered by page
+        """
+        try:
+            # Get all chunk documents for this document_id
+            chunk_db = self.couch_client.get_db(COUCH_CHUNK_DB_NAME)
+            
+            chunks = []
+            for doc_id in chunk_db:
+                try:
+                    chunk_doc = chunk_db[doc_id]
+                    if chunk_doc.get('document_id') == document_id:
+                        chunk_page = chunk_doc.get('page_number', 0)
+                        
+                        # Filter by page number if specified
+                        if page_number is not None and chunk_page != page_number:
+                            continue
+                            
+                        chunks.append({
+                            'id': chunk_doc['_id'],
+                            'chunk_index': chunk_doc.get('chunk_index', 0),
+                            'content': chunk_doc.get('content', ''),
+                            'summary': chunk_doc.get('summary', ''),
+                            'token_count': chunk_doc.get('token_count', 0),
+                            'page_number': chunk_page
+                        })
+                except Exception as e:
+                    logger.warning(f"⚠️ Skipping invalid chunk document: {doc_id}")
+                    continue
+            
+            # Sort by chunk_index to ensure proper order
+            chunks.sort(key=lambda x: x['chunk_index'])
+            
+            filter_info = f"page {page_number}" if page_number is not None else "all pages"
+            logger.info(f"📦 Retrieved chunks for document {document_id} ({filter_info})", extra={
+                "document_id": document_id,
+                "page_number": page_number,
+                "chunks_found": len(chunks)
+            })
+            
+            return chunks
+            
+        except Exception as e:
+            logger.error(f"❌ Error retrieving chunks for document {document_id}: {str(e)}")
+            return []
+
+    def get_page_summary(self, document_id: str, page_number: int):
+        """
+        Get a summary of all chunks on a specific page.
+        
+        Args:
+            document_id: The document ID
+            page_number: Page number (0-indexed)
+            
+        Returns:
+            Dictionary with page summary information
+        """
+        try:
+            page_chunks = self.get_chunks_by_page(document_id, page_number)
+            
+            if not page_chunks:
+                logger.warning(f"⚠️ No chunks found for page {page_number} in document {document_id}")
+                return {
+                    'page_number': page_number,
+                    'chunks_count': 0,
+                    'total_tokens': 0,
+                    'content_preview': '',
+                    'chunks': []
+                }
+            
+            # Calculate page statistics
+            total_tokens = sum(chunk['token_count'] for chunk in page_chunks)
+            content_preview = ' '.join(chunk['content'][:100] for chunk in page_chunks[:3])
+            
+            page_summary = {
+                'page_number': page_number,
+                'chunks_count': len(page_chunks),
+                'total_tokens': total_tokens,
+                'content_preview': content_preview[:500] + "..." if len(content_preview) > 500 else content_preview,
+                'chunks': page_chunks
+            }
+            
+            logger.info(f"📄 Generated page summary for page {page_number}", extra={
+                "document_id": document_id,
+                "page_number": page_number,
+                "chunks_count": len(page_chunks),
+                "total_tokens": total_tokens
+            })
+            
+            return page_summary
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating page summary for page {page_number}: {str(e)}")
+            return None
 
     def summarize_chunk(self, document_id, chunk_index, user_prompt=""):
         """Summarize a specific chunk on-demand"""
@@ -390,7 +541,7 @@ class DocumentService:
             logger.info(f"📄 Document found", extra={
                 "get_id": get_id,
                 "document_id": document_id,
-                "title": document_doc.get('title', 'Unknown')
+                "title": document_doc.get('title', 'Unknown Document')
             })
             
             # Get all paragraphs from paragraphs database

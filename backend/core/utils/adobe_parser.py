@@ -2,6 +2,7 @@ import threading
 import re
 from core.utils.helper import *
 from core.configuration import *
+from core.logger import logger
 
 def parse(file_path, data):
     paras = []
@@ -180,14 +181,42 @@ def table_completion(csv_data, table_no,header, result):
         messages = [
             {"role": "system", "content": prompt}
         ]
+        
+        logger.info(f"🔄 Processing table {table_no} with LLM", extra={
+            "table_no": table_no,
+            "csv_data_length": len(csv_data),
+            "header_length": len(header) if header else 0
+        })
+        
         response = openai_request(messages=messages,model=OPENAI_MODEL)
 
         response_query = response.content.strip().strip('\n')
         result[table_no] = header + "\n" + response_query
-        print(f'Table {table_no} Parsed Using OpenAI...')
-    except:
-        result[table_no] = csv_data
-        response_query = ""
+        
+        logger.success(f"✅ Table {table_no} processed successfully", extra={
+            "table_no": table_no,
+            "response_length": len(response_query)
+        })
+        
+        print(f'Table {table_no} Parsed Using LLM...')
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to process table {table_no}: {str(e)}", extra={
+            "table_no": table_no,
+            "error_type": type(e).__name__
+        })
+        
+        # Fallback: return the raw CSV data with a simple header
+        fallback_content = f"Table {table_no}\nRaw CSV Data:\n{csv_data}"
+        result[table_no] = header + "\n" + fallback_content if header else fallback_content
+        
+        logger.warning(f"⚠️ Using fallback content for table {table_no}", extra={
+            "table_no": table_no,
+            "fallback_length": len(fallback_content)
+        })
+        
+        response_query = fallback_content
+    
     return response_query
 
 

@@ -76,6 +76,22 @@ const ChunksPage = () => {
     setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
   };
 
+  const refreshChunks = async () => {
+    try {
+      setLoading(true);
+      // Clear cache for this specific document
+      documentApi.clearCache();
+      const response = await documentApi.getDocumentChunks(documentId);
+      setChunks(response.chunks);
+      showToast('success', 'Document chunks refreshed successfully!');
+    } catch (error) {
+      console.error('Error refreshing chunks:', error);
+      showToast('error', 'Failed to refresh document chunks. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchChunks = async () => {
       if (!documentId) {
@@ -227,13 +243,23 @@ const ChunksPage = () => {
                 <span className="chunk-count">{chunks.length} chunks available</span>
               </div>
             </div>
-            <Button 
-              variant="secondary" 
-              onClick={() => navigate('/')}
-              className="header-action"
-            >
-              Upload New Document
-            </Button>
+            <div className="header-actions">
+              <Button 
+                variant="secondary" 
+                onClick={refreshChunks}
+                className="refresh-button"
+                disabled={loading}
+              >
+                🔄 Refresh
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => navigate('/')}
+                className="header-action"
+              >
+                Upload New Document
+              </Button>
+            </div>
           </div>
         </div>
       </header>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { documentApi } from '../services/api';
 import { 
@@ -17,6 +17,23 @@ const LandingPage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast, setToast] = useState({ show: false, type: '', message: '', title: '' });
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const showToast = useCallback((type, message, title = '') => {
     setToast({ show: true, type, message, title });
@@ -188,10 +205,7 @@ const LandingPage = () => {
               gap: 'var(--spacing-4)'
             }}>
               <span style={{
-                display: 'none',
-                '@media (min-width: 640px)': {
-                  display: 'inline-flex'
-                },
+                display: isMobile ? 'none' : 'inline-flex',
                 alignItems: 'center',
                 padding: 'var(--spacing-1) var(--spacing-3)',
                 borderRadius: 'var(--radius-full)',

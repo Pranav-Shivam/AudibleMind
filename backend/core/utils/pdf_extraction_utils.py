@@ -18,6 +18,8 @@ import zipfile
 import json
 import shutil
 from core.utils.adobe_parser import parse
+from core.logger import logger
+from typing import List, Dict, Tuple
 
 ADOBE_ZIP_UPLODE_PATH = "temp/adobe_docments"
 ADOBE_PARSED_DOCUMENT_PATH = "batch/parsed_documents"
@@ -83,6 +85,135 @@ def adobe_parse_data(file_path, create_file=False):
         with open(file_path + '/extracted_structured_data.json', 'w') as file:
             json.dump(structured_data_dict, file, indent=4)
     return structured_data_dict
+
+def adobe_parse_data_by_page(file_path, create_file=False) -> Dict[int, List[Dict]]:
+    """
+    Parse Adobe extraction data and group by page number.
+    Returns a dictionary where keys are page numbers and values are lists of elements.
+    """
+    logger.info(f"📄 Parsing Adobe data by page: {file_path}")
+    
+    page_data = {}
+    with open(file_path + '/structuredData.json') as json_file:
+        data = json.load(json_file)
+        for element in data['elements']:
+            text = element.get('Text', "")
+            path = element.get('Path', "")
+            page = element.get('Page', 0)
+            folder = path.split("/")[3] if len(path.split("/")) > 3 else ""
+            
+            if text and path and not any(folder.startswith(prefix) for prefix in ['Footnote']):
+                if page not in page_data:
+                    page_data[page] = []
+                page_data[page].append({'text': text, 'path': path, 'page': page})
+    
+    if create_file:
+        with open(file_path + '/extracted_structured_data_by_page.json', 'w') as file:
+            json.dump(page_data, file, indent=4)
+    
+    logger.success(f"✅ Parsed data by page", extra={
+        "pages_found": len(page_data),
+        "total_elements": sum(len(elements) for elements in page_data.values())
+    })
+    
+    return page_data
+
+def extract_single_page_pdf(input_pdf_path: str, page_number: int, output_path: str) -> str:
+    """
+    Extract a single page from a PDF and save it as a temporary PDF file.
+    Returns the path to the extracted single-page PDF.
+    """
+    logger.info(f"📄 Extracting page {page_number} from PDF", extra={
+        "input_path": input_pdf_path,
+        "page_number": page_number
+    })
+    
+    # Create output directory if it doesn't exist
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    
+    # Generate unique filename for this page
+    page_filename = f"page_{page_number}_{uuid.uuid4().hex[:8]}.pdf"
+    page_path = os.path.join(output_path, page_filename)
+    
+    try:
+        with open(input_pdf_path, 'rb') as input_pdf_file, open(page_path, 'wb') as output_pdf_file:
+            pdf_reader = PyPDF2.PdfReader(input_pdf_file)
+            
+            # Check if page number is valid
+            if page_number >= len(pdf_reader.pages):
+                raise ValueError(f"Page {page_number} does not exist. PDF has {len(pdf_reader.pages)} pages.")
+            
+            pdf_writer = PyPDF2.PdfWriter()
+            page = pdf_reader.pages[page_number]
+            pdf_writer.add_page(page)
+            pdf_writer.write(output_pdf_file)
+        
+        logger.success(f"✅ Page {page_number} extracted successfully", extra={
+            "page_path": page_path,
+            "page_size": os.path.getsize(page_path)
+        })
+        
+        return page_path
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to extract page {page_number}: {str(e)}")
+        raise
+
+def extract_pdf_by_pages(file, document_id: str) -> Tuple[List[Dict], Dict[int, List[Dict]]]:
+    """
+    Extract PDF content page by page and return both the original format and page-grouped format.
+    This maintains backward compatibility while enabling page-level processing.
+    """
+    logger.info(f"🚀 Starting page-by-page PDF extraction", extra={
+        "document_id": document_id
+    })
+    
+    if not os.path.exists(ADOBE_ZIP_UPLODE_PATH):
+        os.makedirs(ADOBE_ZIP_UPLODE_PATH)
+
+    # Save the full PDF first
+    full_pdf_path = f'{ADOBE_ZIP_UPLODE_PATH}/{document_id}.pdf'
+    with open(full_pdf_path, 'wb') as f:
+        file.file.seek(0)
+        f.write(file.file.read())
+
+    # Extract full document using Adobe
+    adobe_json_path, file_name = adobe_extractor(full_pdf_path, ADOBE_ZIP_UPLODE_PATH)
+    
+    # Parse data in both formats for backward compatibility
+    structured_data = adobe_parse_data(adobe_json_path, create_file=True)
+    page_grouped_data = adobe_parse_data_by_page(adobe_json_path, create_file=True)
+    
+    # Parse using the original parser for backward compatibility
+    parsed_data = parse(adobe_json_path, structured_data)
+    
+    logger.success(f"✅ Page-by-page extraction completed", extra={
+        "document_id": document_id,
+        "pages_found": len(page_grouped_data),
+        "total_paragraphs": len(parsed_data)
+    })
+    
+    return parsed_data, page_grouped_data
+
+def process_page_content(page_elements: List[Dict], file_path: str) -> List[Dict]:
+    """
+    Process content for a single page using the existing parser logic.
+    Returns a list of paragraphs/objects for that page.
+    """
+    logger.debug(f"📝 Processing page content", extra={
+        "elements_count": len(page_elements),
+        "file_path": file_path
+    })
+    
+    # Use the existing parse function but with page-specific data
+    page_parsed_data = parse(file_path, page_elements)
+    
+    logger.debug(f"✅ Page content processed", extra={
+        "paragraphs_created": len(page_parsed_data)
+    })
+    
+    return page_parsed_data
 
 
 

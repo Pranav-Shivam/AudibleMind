@@ -131,3 +131,4 @@ ADOBE_CLIENT_SECRET = config.adobe.client_secret
 MAX_PARA_LENGTH = config.processing.max_paragraph_length
 OLLAMA_MODEL = config.ollama.model
 CHUNK_SIZE = config.processing.chunk_size
+CURRENT_CHUNK_SIZE = 300

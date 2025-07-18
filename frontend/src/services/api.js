@@ -1,5 +1,9 @@
 const API_BASE_URL = 'http://localhost:8001';
 
+// Request deduplication cache
+const requestCache = new Map();
+const pendingRequests = new Map();
+
 class ApiError extends Error {
   constructor(message, status, response) {
     super(message);
@@ -7,6 +11,25 @@ class ApiError extends Error {
     this.response = response;
   }
 }
+
+// Utility function to create cache key
+const createCacheKey = (method, url, body = null) => {
+  const key = `${method}:${url}`;
+  if (body) {
+    // For FormData, we'll use a simple hash based on the first few entries
+    if (body instanceof FormData) {
+      const entries = Array.from(body.entries()).slice(0, 3); // First 3 entries for hash
+      return `${key}:${JSON.stringify(entries)}`;
+    }
+    return `${key}:${JSON.stringify(body)}`;
+  }
+  return key;
+};
+
+// Utility function to check if cache is still valid (5 minutes)
+const isCacheValid = (timestamp) => {
+  return Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes
+};
 
 // API client for document operations
 export const documentApi = {
@@ -71,66 +94,120 @@ export const documentApi = {
    * @returns {Promise<Object>} - Document details
    */
   async getDocument(documentId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/document/${documentId}`);
-
-      if (!response.ok) {
-        let errorMessage = `Failed to fetch document: ${response.status}`;
-        
-        try {
-          const errorData = await response.json();
-          if (errorData.detail) {
-            errorMessage = errorData.detail;
-          }
-        } catch (e) {
-          errorMessage = `Failed to fetch document: ${response.status} ${response.statusText}`;
-        }
-        
-        throw new ApiError(errorMessage, response.status, null);
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError('Network error: Could not connect to server', 0, null);
+    const cacheKey = createCacheKey('GET', `${API_BASE_URL}/document/${documentId}`);
+    
+    // Check cache first
+    const cached = requestCache.get(cacheKey);
+    if (cached && isCacheValid(cached.timestamp)) {
+      return cached.data;
     }
+    
+    // Check if request is already pending
+    if (pendingRequests.has(cacheKey)) {
+      return pendingRequests.get(cacheKey);
+    }
+
+    // Create new request
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/document/${documentId}`);
+
+        if (!response.ok) {
+          let errorMessage = `Failed to fetch document: ${response.status}`;
+          
+          try {
+            const errorData = await response.json();
+            if (errorData.detail) {
+              errorMessage = errorData.detail;
+            }
+          } catch (e) {
+            errorMessage = `Failed to fetch document: ${response.status} ${response.statusText}`;
+          }
+          
+          throw new ApiError(errorMessage, response.status, null);
+        }
+
+        const data = await response.json();
+        
+        // Cache the successful response
+        requestCache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+        
+        return data;
+      } finally {
+        // Clean up pending request
+        pendingRequests.delete(cacheKey);
+      }
+    })();
+
+    // Store pending request
+    pendingRequests.set(cacheKey, requestPromise);
+    
+    return requestPromise;
   },
 
   /**
-   * Get all 8 chunks for a document
+   * Get all chunks for a document with deduplication and caching
    * @param {string} documentId - Document ID
    * @returns {Promise<Object>} - Document chunks data
    */
   async getDocumentChunks(documentId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks`, {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        let errorMessage = `Failed to fetch chunks: ${response.status}`;
-        
-        try {
-          const errorData = await response.json();
-          if (errorData.detail) {
-            errorMessage = errorData.detail;
-          }
-        } catch (e) {
-          errorMessage = `Failed to fetch chunks: ${response.status} ${response.statusText}`;
-        }
-        
-        throw new ApiError(errorMessage, response.status, null);
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError('Network error: Could not connect to server', 0, null);
+    const cacheKey = createCacheKey('GET', `${API_BASE_URL}/document/${documentId}/chunks`);
+    
+    // Check cache first
+    const cached = requestCache.get(cacheKey);
+    if (cached && isCacheValid(cached.timestamp)) {
+      return cached.data;
     }
+    
+    // Check if request is already pending
+    if (pendingRequests.has(cacheKey)) {
+      return pendingRequests.get(cacheKey);
+    }
+
+    // Create new request
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks`, {
+          method: 'GET',
+        });
+
+        if (!response.ok) {
+          let errorMessage = `Failed to fetch chunks: ${response.status}`;
+          
+          try {
+            const errorData = await response.json();
+            if (errorData.detail) {
+              errorMessage = errorData.detail;
+            }
+          } catch (e) {
+            errorMessage = `Failed to fetch chunks: ${response.status} ${response.statusText}`;
+          }
+          
+          throw new ApiError(errorMessage, response.status, null);
+        }
+
+        const data = await response.json();
+        
+        // Cache the successful response
+        requestCache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+        
+        return data;
+      } finally {
+        // Clean up pending request
+        pendingRequests.delete(cacheKey);
+      }
+    })();
+
+    // Store pending request
+    pendingRequests.set(cacheKey, requestPromise);
+    
+    return requestPromise;
   },
 
   /**
@@ -172,6 +249,25 @@ export const documentApi = {
       }
       throw new ApiError('Network error: Could not connect to server', 0, null);
     }
+  },
+
+  /**
+   * Clear the request cache (useful for testing or manual cache invalidation)
+   */
+  clearCache() {
+    requestCache.clear();
+    pendingRequests.clear();
+  },
+
+  /**
+   * Get cache statistics (useful for debugging)
+   */
+  getCacheStats() {
+    return {
+      cachedRequests: requestCache.size,
+      pendingRequests: pendingRequests.size,
+      cacheKeys: Array.from(requestCache.keys())
+    };
   }
 };
 

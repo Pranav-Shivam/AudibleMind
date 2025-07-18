@@ -23,4 +23,5 @@ class ChunkModel(Document):
     content = TextField()
     summary = TextField()  # Will be populated on-demand
     token_count = IntegerField()
+    page_number = IntegerField()  # Page number for page-level chunking
     
