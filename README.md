@@ -65,6 +65,7 @@ A comprehensive document analysis platform that combines PDF processing with AI-
    ```bash
    cd frontend
    npm install
+   npm install react react-dom antd @ant-design/icons @ant-design/pro-components @ant-design/colors umi-request
    npm run dev
    ```
 
