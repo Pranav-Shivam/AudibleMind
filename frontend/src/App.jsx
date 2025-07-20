@@ -5,6 +5,8 @@ import ChunksPage from './pages/ChunksPage';
 import SummaryPage from './pages/SummaryPage';
 import Chat from './components/Chat';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import { ConfigProvider } from 'antd'
+import enUS from 'antd/locale/en_US'
 import './App.css';
 
 function App() {
