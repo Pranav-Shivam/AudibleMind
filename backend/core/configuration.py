@@ -16,7 +16,7 @@ class DatabaseConfig:
     document_db_name: str = "aud_documents"
     paragraph_db_name: str = "aud_paras"
     chunk_db_name: str = "aud_chunks"
-
+    bundle_db_name: str = "aud_bundles"
 
 @dataclass
 class ServerConfig:
@@ -121,6 +121,7 @@ COUCH_PDF_DB_NAME = config.database.pdf_db_name
 COUCH_DOCUMENT_DB_NAME = config.database.document_db_name
 COUCH_PARAGRAPH_DB_NAME = config.database.paragraph_db_name
 COUCH_CHUNK_DB_NAME = config.database.chunk_db_name
+COUCH_BUNDLE_DB_NAME = config.database.bundle_db_name
 
 OPENAI_KEY = config.openai.api_key
 OPENAI_MODEL = config.openai.model

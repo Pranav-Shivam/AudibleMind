@@ -8,8 +8,7 @@ from typing import List, Dict, Tuple, Optional
 from langdetect import detect
 from pathlib import Path
 from core.logger import logger
-
-nltk.download("punkt")
+from core.utils.global_utils import GlobalUtils
 
 # Try to import spaCy for better NLP processing
 try:

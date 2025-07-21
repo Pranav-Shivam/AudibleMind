@@ -13,6 +13,8 @@ import json
 import time
 import os
 from typing import Dict, List
+from app.document.services.models import ChunkResponse
+from core.utils.global_utils import GlobalUtils
 
 class DocumentService:
     def __init__(self):
@@ -23,7 +25,7 @@ class DocumentService:
         self.db = self.couch_client.get_db(COUCH_PDF_DB_NAME)
         self.document_summarizer = DocumentSummarizer()
         self.text_processing = TextProcessing()
-        
+        self.global_utils = GlobalUtils()
         init_duration = (time.time() - start_time) * 1000
         logger.success(f"✅ DocumentService initialized", extra={
             "init_duration": round(init_duration, 2),
@@ -222,8 +224,18 @@ class DocumentService:
                     content=chunk_data['content'],
                     summary="",  # Will be populated on-demand
                     token_count=chunk_data['token_count'],
-                    page_number=chunk_data['page_number']  # Add page number metadata
+                    page_number=chunk_data['page_number'],  # Add page number metadata
+                    number_of_words=self.global_utils.count_words(chunk_data['content']),
+                    is_user_liked=False,
+                    heading=self.global_utils.generate_heading(chunk_data['content']),
+                    created_at=datetime.now(),
+                    updated_at=datetime.now(),
+                    bundle_index=0,
+                    bundle_id="",
+                    bundle_text="",
+                    bundle_summary=""
                 )
+                print(chunk_model)
                 self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, chunk_model)
                 saved_chunks += 1
             
@@ -234,6 +246,61 @@ class DocumentService:
                 "saved_chunks": saved_chunks,
                 "save_duration": round(chunk_save_duration, 2)
             })
+            
+            # Save bundles to database
+            bundle_save_start = time.time()
+            #  Save bundles to database, creating bundle as bundle 1 = first 4 chunks, bundle 2 = next 4 chunks, and so on.
+            bundle_index = 1
+            for i in range(0, len(chunks), 4):
+                bundle_id = generate_uid()
+                bundle_model = BundleModel(
+                    _id=bundle_id,
+                    bundle_index=bundle_index,
+                    bundle_id=bundle_id,
+                    bundle_summary="",
+                    created_at=datetime.now(),
+                    updated_at=datetime.now(),
+                    chunks_text= "\n".join([chunk['content'] for chunk in chunks[i:i+4]])  # only adding the content of the chunks to the bundle for bundle i >> i+4
+                )
+                self.couch_client.save_to_db(COUCH_BUNDLE_DB_NAME, bundle_model)
+                
+                # Update chunks with bundle_index - FIX: Need to update the actual ChunkModel objects, not the dictionary
+                for j in range(i, min(i+4, len(chunks))):
+                    # Get the chunk data
+                    chunk_data = chunks[j]
+                    
+                    # Create a new ChunkModel with updated bundle info
+                    updated_chunk_model = ChunkModel(
+                        _id=chunk_data.get('_id', generate_uid()),
+                        document_id=chunk_data['document_id'],
+                        chunk_index=chunk_data['chunk_index'],
+                        content=chunk_data['content'],
+                        summary="",  # Default empty summary
+                        token_count=chunk_data['token_count'],
+                        page_number=chunk_data['page_number'],
+                        number_of_words=self.global_utils.count_words(chunk_data['content']),  # Calculate from content
+                        is_user_liked=False,  # Default value
+                        heading=self.global_utils.generate_heading(chunk_data['content']),  # Generate from content
+                        created_at=datetime.now(),
+                        updated_at=datetime.now(),
+                        bundle_index=bundle_index,
+                        bundle_id=bundle_id,
+                        bundle_text=bundle_model.chunks_text,
+                        bundle_summary=bundle_model.bundle_summary
+                    )
+                    self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, updated_chunk_model)
+                
+                bundle_index += 1
+                
+                
+            bundle_save_duration = (time.time() - bundle_save_start) * 1000
+            logger.success(f"💾 Bundles saved to database", extra={
+                "upload_id": upload_id,
+                "document_id": document_id,
+                "bundles_created": bundle_index,
+                "save_duration": round(bundle_save_duration, 2)
+            })
+            
             
             # Save user prompt
             prompt_save_start = time.time()
@@ -292,32 +359,43 @@ class DocumentService:
             chunk_db = self.couch_client.get_db(COUCH_CHUNK_DB_NAME)
             
             # Query by document_id (we'll need to iterate through all docs)
-            chunks = []
+            response_chunks = []
             for doc_id in chunk_db:
                 try:
                     chunk_doc = chunk_db[doc_id]
                     if chunk_doc.get('document_id') == document_id:
-                        chunks.append({
-                            'id': chunk_doc['_id'],
-                            'chunk_index': chunk_doc.get('chunk_index', 0),
-                            'content': chunk_doc.get('content', ''),
-                            'summary': chunk_doc.get('summary', ''),
-                            'token_count': chunk_doc.get('token_count', 0),
-                            'page_number': chunk_doc.get('page_number', 0)  # Include page number
-                        })
+                        
+                        current_chunk = ChunkResponse(
+                            id=chunk_doc['_id'],
+                            chunk_index=chunk_doc['chunk_index'],
+                            content=chunk_doc['content'],
+                            summary=chunk_doc['summary'],
+                            token_count=chunk_doc['token_count'],
+                            page_number=chunk_doc['page_number'],
+                            number_of_words=chunk_doc['number_of_words'],
+                            is_user_liked=chunk_doc['is_user_liked'],
+                            heading=chunk_doc['heading'],
+                            created_at=chunk_doc['created_at'],
+                            updated_at=chunk_doc['updated_at'],
+                            bundle_index=chunk_doc['bundle_index'],
+                            bundle_id=chunk_doc['bundle_id'],
+                            bundle_text=chunk_doc['bundle_text'],
+                            bundle_summary=chunk_doc['bundle_summary']
+                        )
+                        response_chunks.append(current_chunk)
                 except Exception as e:
                     logger.warning(f"⚠️ Skipping invalid chunk document: {doc_id}")
                     continue
             
             # Sort by chunk_index to ensure proper order
-            chunks.sort(key=lambda x: x['chunk_index'])
+            response_chunks.sort(key=lambda x: x.chunk_index)
             
             logger.info(f"📦 Retrieved chunks for document {document_id}", extra={
                 "document_id": document_id,
-                "chunks_found": len(chunks)
+                "chunks_found": len(response_chunks)
             })
             
-            return chunks
+            return response_chunks
             
         except Exception as e:
             logger.error(f"❌ Error retrieving chunks for document {document_id}: {str(e)}")

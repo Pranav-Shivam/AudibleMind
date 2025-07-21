@@ -1,4 +1,4 @@
-from couchdb.mapping import Document, TextField, DateTimeField, IntegerField
+from couchdb.mapping import Document, TextField, DateTimeField, IntegerField, BooleanField, ListField
 
 
 class DocumentModel(Document):
@@ -24,4 +24,22 @@ class ChunkModel(Document):
     summary = TextField()  # Will be populated on-demand
     token_count = IntegerField()
     page_number = IntegerField()  # Page number for page-level chunking
+    number_of_words = IntegerField()
+    is_user_liked = BooleanField()
+    heading = TextField()
+    created_at = DateTimeField()
+    updated_at = DateTimeField()
+    bundle_index = IntegerField()
+    bundle_id = TextField()
+    bundle_text = TextField()
+    bundle_summary = TextField()
+
+class BundleModel(Document):
+    _id = TextField()
+    bundle_index = IntegerField()
+    bundle_id = TextField()
+    bundle_summary = TextField()
+    created_at = DateTimeField()
+    updated_at = DateTimeField()
+    chunks_text = TextField()
     

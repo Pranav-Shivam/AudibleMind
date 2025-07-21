@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, LoadingSpinner, ToastNotification, Input } from './shared';
 
-const Chat = ({ initialParagraph }) => {
+const Chat = ({ initialParagraph, isVisible, onClose }) => {
   const [formData, setFormData] = useState({
     paragraph: initialParagraph || 'Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions without being explicitly programmed. It uses algorithms to identify patterns in data and make predictions or decisions based on that data. Common applications include recommendation systems, image recognition, and natural language processing.',
     llm_provider: 'local',
@@ -22,6 +22,30 @@ const Chat = ({ initialParagraph }) => {
   const [conversation, setConversation] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [markdownOutput, setMarkdownOutput] = useState('');
+  const [showConversationModal, setShowConversationModal] = useState(false);
+
+  // Update form data when initialParagraph changes
+  useEffect(() => {
+    if (initialParagraph) {
+      setFormData(prev => ({
+        ...prev,
+        paragraph: initialParagraph
+      }));
+    }
+  }, [initialParagraph]);
+
+  // Show conversation modal when conversation is set
+  useEffect(() => {
+    if (conversation && conversation.conversation && conversation.conversation.length > 0) {
+      setShowConversationModal(true);
+      // Show success message
+      setFeedback({
+        show: true,
+        type: 'result',
+        message: `✅ Conversation generated successfully!\n\n📊 ${conversation.total_turns} turns created\n👥 ${conversation.learners_included?.join(', ') || 'Direct mode'}\n⏰ ${new Date(conversation.timestamp).toLocaleTimeString()}`
+      });
+    }
+  }, [conversation]);
 
   const avatarMap = {
     'Pranav': '🧑‍🏫',
@@ -133,6 +157,14 @@ const Chat = ({ initialParagraph }) => {
       }
 
       if (response.ok) {
+        console.log('Chat API Response:', data);
+        console.log('Response structure:', {
+          hasConversation: !!data.conversation,
+          conversationLength: data.conversation?.length,
+          conversationType: typeof data.conversation,
+          isArray: Array.isArray(data.conversation),
+          fullData: data
+        });
         setFeedback({
           show: true,
           type: 'result',
@@ -140,7 +172,9 @@ const Chat = ({ initialParagraph }) => {
         });
         setConversation(data);
         setShowExport(true);
+        console.log('Conversation state set:', data);
       } else {
+        console.error('Chat API Error:', data);
         setFeedback({
           show: true,
           type: 'error',
@@ -176,311 +210,405 @@ const Chat = ({ initialParagraph }) => {
   };
 
   return (
-    <div className="chat-container">
-      <Card className="chat-card">
-        <form onSubmit={handleSubmit} autoComplete="off" className="chat-form">
-          {/* Technical Paragraph Section */}
-          <div className="form-section">
-            <h3 className="section-title">Technical Paragraph</h3>
-            <div className="form-group">
-              <label htmlFor="paragraph" className="form-label">Content to Discuss</label>
-              <textarea
-                id="paragraph"
-                name="paragraph"
-                value={formData.paragraph}
-                onChange={handleInputChange}
-                placeholder="Enter your technical paragraph here..."
-                required
-                className="form-textarea"
-                rows={6}
-              />
-            </div>
-          </div>
-
-          {/* Interaction Mode Section */}
-          <div className="form-section">
-            <h3 className="section-title">Interaction Mode</h3>
-            <div className="interaction-modes">
-              {interactionModes.map(mode => (
-                <label key={mode.value} className="interaction-mode-option">
-                  <input
-                    type="radio"
-                    name="interaction_mode"
-                    value={mode.value}
-                    checked={formData.interaction_mode === mode.value}
-                    onChange={handleInputChange}
-                    className="mode-radio"
-                  />
-                  <div className="mode-content">
-                    <div className="mode-title">{mode.label}</div>
-                    <div className="mode-description">{mode.description}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* LLM Configuration Section */}
-          <div className="form-section">
-            <h3 className="section-title">AI Model Configuration</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="llm_provider" className="form-label">LLM Provider</label>
-                <select
-                  id="llm_provider"
-                  name="llm_provider"
-                  value={formData.llm_provider}
-                  onChange={handleInputChange}
-                  className="form-select"
+    <>
+      {isVisible && (
+        <div className="chat-modal-overlay">
+          <div className="chat-modal-backdrop" onClick={onClose}></div>
+          <div className="chat-modal-content">
+            <div className="chat-modal-header">
+              <h2>Enhance Content with AI</h2>
+              {isVisible && (
+                <Button
+                  className="chat-modal-close"
+                  onClick={onClose}
+                  type="text"
                 >
-                  <option value="local">Local (Ollama)</option>
-                  <option value="openai">OpenAI</option>
-                </select>
-              </div>
-
-              {formData.llm_provider === 'local' && (
-                <div className="form-group">
-                  <label htmlFor="local_model" className="form-label">Local Model</label>
-                  <select
-                    id="local_model"
-                    name="local_model"
-                    value={formData.local_model}
-                    onChange={handleInputChange}
-                    className="form-select"
-                  >
-                    {localModels.map(model => (
-                      <option key={model.value} value={model.value}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  ✕
+                </Button>
               )}
-
-              {formData.llm_provider === 'openai' && (
-                <>
+            </div>
+            <Card className="chat-card">
+              <form onSubmit={handleSubmit} autoComplete="off" className="chat-form">
+                {/* Technical Paragraph Section */}
+                <div className="form-section">
+                  <h3 className="section-title">Technical Paragraph</h3>
                   <div className="form-group">
-                    <label htmlFor="api_key" className="form-label">OpenAI API Key</label>
-                    <Input
-                      type="password"
-                      id="api_key"
-                      name="api_key"
-                      value={formData.api_key}
+                    <label htmlFor="paragraph" className="form-label">Content to Discuss</label>
+                    <textarea
+                      id="paragraph"
+                      name="paragraph"
+                      value={formData.paragraph}
                       onChange={handleInputChange}
-                      placeholder="sk-..."
-                      className="form-input"
+                      placeholder="Enter your technical paragraph here..."
+                      required
+                      className="form-textarea"
+                      rows={6}
                     />
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="openai_model" className="form-label">OpenAI Model</label>
-                    <select
-                      id="openai_model"
-                      name="openai_model"
-                      value={formData.openai_model}
-                      onChange={handleInputChange}
-                      className="form-select"
-                    >
-                      {openaiModels.map(model => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="max_turns" className="form-label">Max Turns per Learner</label>
-                <Input
-                  type="number"
-                  id="max_turns"
-                  name="max_turns_per_learner"
-                  value={formData.max_turns_per_learner}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="10"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="num_questions" className="form-label">Questions per Learner (Optional)</label>
-                <Input
-                  type="number"
-                  id="num_questions"
-                  name="num_questions_per_learner"
-                  value={formData.num_questions_per_learner}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="10"
-                  placeholder="Override default"
-                  className="form-input"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Learner Configuration Section - Only show if not in direct mode */}
-          {formData.interaction_mode !== 'direct' && (
-            <div className="form-section">
-              <h3 className="section-title">Learner Configuration</h3>
-              <div className="learner-options">
-                {/* Shivam Option - Only show if Shivam is included */}
-                {(formData.interaction_mode === 'both' || formData.interaction_mode === 'shivam') && (
-                  <div className="learner-option">
-                    <label className="learner-checkbox">
-                      <span className="learner-name">🧒 Shivam (Beginner)</span>
-                    </label>
-                    <div className="learner-details">
-                      <div className="form-group">
-                        <label htmlFor="shivam_description" className="form-label">Custom Description (Optional)</label>
-                        <textarea
-                          id="shivam_description"
-                          name="shivam_description"
-                          value={formData.shivam_description}
+                {/* Interaction Mode Section */}
+                <div className="form-section">
+                  <h3 className="section-title">Interaction Mode</h3>
+                  <div className="interaction-modes">
+                    {interactionModes.map(mode => (
+                      <label key={mode.value} className="interaction-mode-option">
+                        <input
+                          type="radio"
+                          name="interaction_mode"
+                          value={mode.value}
+                          checked={formData.interaction_mode === mode.value}
                           onChange={handleInputChange}
-                          placeholder="Custom description for Shivam..."
-                          className="form-textarea"
-                          rows={3}
+                          className="mode-radio"
                         />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="shivam_questions" className="form-label">Shivam's Questions (One per line, optional)</label>
-                        <textarea
-                          id="shivam_questions"
-                          name="shivam_questions"
-                          value={formData.shivam_questions}
-                          onChange={handleInputChange}
-                          placeholder="What is machine learning?&#10;How does it work?&#10;Why is it useful?"
-                          className="form-textarea"
-                          rows={4}
-                        />
-                        <small className="form-help">
-                          Leave empty for Pranav to generate questions automatically based on Shivam's persona
-                        </small>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Prem Option - Only show if Prem is included */}
-                {(formData.interaction_mode === 'both' || formData.interaction_mode === 'prem') && (
-                  <div className="learner-option">
-                    <label className="learner-checkbox">
-                      <span className="learner-name">👨‍🎓 Prem (Advanced)</span>
-                    </label>
-                    <div className="learner-details">
-                      <div className="form-group">
-                        <label htmlFor="prem_description" className="form-label">Custom Description (Optional)</label>
-                        <textarea
-                          id="prem_description"
-                          name="prem_description"
-                          value={formData.prem_description}
-                          onChange={handleInputChange}
-                          placeholder="Custom description for Prem..."
-                          className="form-textarea"
-                          rows={3}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="prem_questions" className="form-label">Prem's Questions (One per line, optional)</label>
-                        <textarea
-                          id="prem_questions"
-                          name="prem_questions"
-                          value={formData.prem_questions}
-                          onChange={handleInputChange}
-                          placeholder="What are the theoretical foundations of ML algorithms?&#10;How do gradient descent optimizations work?&#10;What are the limitations of current approaches?"
-                          className="form-textarea"
-                          rows={4}
-                        />
-                        <small className="form-help">
-                          Leave empty for Pranav to generate questions automatically based on Prem's persona
-                        </small>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <div className="form-actions">
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="submit-button"
-            >
-              {isLoading && <LoadingSpinner size="small" />}
-              Generate Conversation
-            </Button>
-          </div>
-        </form>
-
-        {/* Feedback */}
-        {feedback.show && (
-          <div className={`feedback ${feedback.type}`}>
-            <div className="feedback-content">
-              {feedback.message.split('\n').map((line, index) => (
-                <p key={index} className="feedback-line">{line}</p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Conversation Output */}
-        {conversation && (
-          <div className="conversation-section">
-            <h3 className="conversation-title">Generated Conversation</h3>
-            <div className="conversation-list">
-              {conversation.conversation.map((turn, index) => (
-                <div key={index} className="conversation-turn">
-                  <div className="turn-avatar">
-                    {avatarMap[turn.speaker] || '💬'}
-                  </div>
-                  <div className="turn-content">
-                    <div className="turn-speaker">{turn.speaker}</div>
-                    {turn.complexity_level && (
-                      <div className="turn-level">Level: {turn.complexity_level}</div>
-                    )}
-                    <div className="turn-text">{turn.text}</div>
+                        <div className="mode-content">
+                          <div className="mode-title">{mode.label}</div>
+                          <div className="mode-description">{mode.description}</div>
+                        </div>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                {/* LLM Configuration Section */}
+                <div className="form-section">
+                  <h3 className="section-title">AI Model Configuration</h3>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label htmlFor="llm_provider" className="form-label">LLM Provider</label>
+                      <select
+                        id="llm_provider"
+                        name="llm_provider"
+                        value={formData.llm_provider}
+                        onChange={handleInputChange}
+                        className="form-select"
+                      >
+                        <option value="local">Local (Ollama)</option>
+                        <option value="openai">OpenAI</option>
+                      </select>
+                    </div>
+
+                    {formData.llm_provider === 'local' && (
+                      <div className="form-group">
+                        <label htmlFor="local_model" className="form-label">Local Model</label>
+                        <select
+                          id="local_model"
+                          name="local_model"
+                          value={formData.local_model}
+                          onChange={handleInputChange}
+                          className="form-select"
+                        >
+                          {localModels.map(model => (
+                            <option key={model.value} value={model.value}>
+                              {model.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {formData.llm_provider === 'openai' && (
+                      <>
+                        <div className="form-group">
+                          <label htmlFor="api_key" className="form-label">OpenAI API Key</label>
+                          <Input
+                            type="password"
+                            id="api_key"
+                            name="api_key"
+                            value={formData.api_key}
+                            onChange={handleInputChange}
+                            placeholder="sk-..."
+                            className="form-input"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label htmlFor="openai_model" className="form-label">OpenAI Model</label>
+                          <select
+                            id="openai_model"
+                            name="openai_model"
+                            value={formData.openai_model}
+                            onChange={handleInputChange}
+                            className="form-select"
+                          >
+                            {openaiModels.map(model => (
+                              <option key={model.value} value={model.value}>
+                                {model.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label htmlFor="max_turns" className="form-label">Max Turns per Learner</label>
+                      <Input
+                        type="number"
+                        id="max_turns"
+                        name="max_turns_per_learner"
+                        value={formData.max_turns_per_learner}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="10"
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="num_questions" className="form-label">Questions per Learner (Optional)</label>
+                      <Input
+                        type="number"
+                        id="num_questions"
+                        name="num_questions_per_learner"
+                        value={formData.num_questions_per_learner}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="10"
+                        placeholder="Override default"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Learner Configuration Section - Only show if not in direct mode */}
+                {formData.interaction_mode !== 'direct' && (
+                  <div className="form-section">
+                    <h3 className="section-title">Learner Configuration</h3>
+                    <div className="learner-options">
+                      {/* Shivam Option - Only show if Shivam is included */}
+                      {(formData.interaction_mode === 'both' || formData.interaction_mode === 'shivam') && (
+                        <div className="learner-option">
+                          <label className="learner-checkbox">
+                            <span className="learner-name">🧒 Shivam (Beginner)</span>
+                          </label>
+                          <div className="learner-details">
+                            <div className="form-group">
+                              <label htmlFor="shivam_description" className="form-label">Custom Description (Optional)</label>
+                              <textarea
+                                id="shivam_description"
+                                name="shivam_description"
+                                value={formData.shivam_description}
+                                onChange={handleInputChange}
+                                placeholder="Custom description for Shivam..."
+                                className="form-textarea"
+                                rows={3}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="shivam_questions" className="form-label">Shivam's Questions (One per line, optional)</label>
+                              <textarea
+                                id="shivam_questions"
+                                name="shivam_questions"
+                                value={formData.shivam_questions}
+                                onChange={handleInputChange}
+                                placeholder="What is machine learning?&#10;How does it work?&#10;Why is it useful?"
+                                className="form-textarea"
+                                rows={4}
+                              />
+                              <small className="form-help">
+                                Leave empty for Pranav to generate questions automatically based on Shivam's persona
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Prem Option - Only show if Prem is included */}
+                      {(formData.interaction_mode === 'both' || formData.interaction_mode === 'prem') && (
+                        <div className="learner-option">
+                          <label className="learner-checkbox">
+                            <span className="learner-name">👨‍🎓 Prem (Advanced)</span>
+                          </label>
+                          <div className="learner-details">
+                            <div className="form-group">
+                              <label htmlFor="prem_description" className="form-label">Custom Description (Optional)</label>
+                              <textarea
+                                id="prem_description"
+                                name="prem_description"
+                                value={formData.prem_description}
+                                onChange={handleInputChange}
+                                placeholder="Custom description for Prem..."
+                                className="form-textarea"
+                                rows={3}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="prem_questions" className="form-label">Prem's Questions (One per line, optional)</label>
+                              <textarea
+                                id="prem_questions"
+                                name="prem_questions"
+                                value={formData.prem_questions}
+                                onChange={handleInputChange}
+                                placeholder="What are the theoretical foundations of ML algorithms?&#10;How do gradient descent optimizations work?&#10;What are the limitations of current approaches?"
+                                className="form-textarea"
+                                rows={4}
+                              />
+                              <small className="form-help">
+                                Leave empty for Pranav to generate questions automatically based on Prem's persona
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="form-actions">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading}
+                    className="submit-button"
+                  >
+                    {isLoading && <LoadingSpinner size="small" />}
+                    Generate Conversation
+                  </Button>
+                </div>
+              </form>
+
+              {/* Feedback */}
+              {feedback.show && (
+                <div className={`feedback ${feedback.type}`}>
+                  <div className="feedback-content">
+                    {feedback.message.split('\n').map((line, index) => (
+                      <p key={index} className="feedback-line">{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Test Button for Debugging */}
+              <div style={{margin: '16px 0', textAlign: 'center'}}>
+                <Button
+                  onClick={() => {
+                    const testData = {
+                      conversation: [
+                        {
+                          speaker: "Pranav",
+                          text: "This is a test conversation response to verify the display is working correctly.",
+                          complexity_level: "Beginner"
+                        },
+                        {
+                          speaker: "Shivam", 
+                          text: "Thank you for the explanation!",
+                          complexity_level: "Beginner"
+                        }
+                      ],
+                      total_turns: 2,
+                      success: true,
+                      message: "Test conversation generated",
+                      timestamp: new Date().toISOString(),
+                      learners_included: ["Shivam"]
+                    };
+                    setConversation(testData);
+                    setShowExport(true);
+                  }}
+                  style={{marginRight: '8px'}}
+                >
+                  Test Conversation Display
+                </Button>
+                <Button
+                  onClick={() => {
+                    setConversation(null);
+                    setShowExport(false);
+                  }}
+                >
+                  Clear Conversation
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Conversation Display Modal */}
+      {showConversationModal && conversation && (
+        <div className="conversation-modal-overlay">
+          <div className="conversation-modal-backdrop" onClick={() => setShowConversationModal(false)}></div>
+          <div className="conversation-modal-content">
+            <div className="conversation-modal-header">
+              <div className="conversation-header-info">
+                <h2>Generated Conversation</h2>
+                <div className="conversation-stats">
+                  <span className="stat-item">
+                    <strong>{conversation.total_turns}</strong> turns
+                  </span>
+                  <span className="stat-item">
+                    <strong>{conversation.learners_included?.join(', ') || 'Direct'}</strong> learners
+                  </span>
+                  <span className="stat-item">
+                    {new Date(conversation.timestamp).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              <div className="conversation-modal-actions">
+                <Button
+                  onClick={() => {
+                    exportMarkdown();
+                    setFeedback({
+                      show: true,
+                      type: 'result',
+                      message: '📋 Markdown exported successfully! Click on the text area below to select all content.'
+                    });
+                  }}
+                  className="export-btn"
+                >
+                  Export
+                </Button>
+                <Button
+                  className="conversation-modal-close"
+                  onClick={() => setShowConversationModal(false)}
+                  type="text"
+                >
+                  ✕
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+            
+            <div className="conversation-modal-body">
+              <div className="conversation-turns">
+                {conversation.conversation.map((turn, index) => (
+                  <div key={index} className={`conversation-turn ${turn.speaker.toLowerCase()}`}>
+                    <div className="turn-header">
+                      <div className="turn-avatar">
+                        {avatarMap[turn.speaker] || '💬'}
+                      </div>
+                      <div className="turn-info">
+                        <div className="turn-speaker">{turn.speaker}</div>
+                        {turn.complexity_level && (
+                          <div className="turn-level">{turn.complexity_level}</div>
+                        )}
+                      </div>
+                      <div className="turn-number">#{index + 1}</div>
+                    </div>
+                    <div className="turn-content">
+                      {turn.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        {/* Export Section */}
-        {showExport && (
-          <div className="export-section">
-            <Button
-              variant="secondary"
-              onClick={exportMarkdown}
-              className="export-button"
-            >
-              Export as Markdown
-            </Button>
+            {/* Markdown Output */}
+            {markdownOutput && (
+              <div className="markdown-section">
+                <h4>Markdown Export</h4>
+                <textarea
+                  className="markdown-output"
+                  value={markdownOutput}
+                  readOnly
+                  onClick={(e) => e.target.select()}
+                  rows={8}
+                />
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Markdown Output */}
-        {markdownOutput && (
-          <div className="markdown-section">
-            <h4 className="markdown-title">Markdown Output</h4>
-            <textarea
-              className="markdown-output"
-              value={markdownOutput}
-              readOnly
-              onClick={(e) => e.target.select()}
-              rows={10}
-            />
-          </div>
-        )}
-      </Card>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -1,13 +1,18 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 import uvicorn
 import time
 import psutil
 import os
+import nltk
 from core.configuration import config
 from core.logger import logger, LoggerUtils
 from api.document.document import document_router
 from api.chats.chats import router as chats_router
+from api.audio.audio import audio_router
+
 
 # Log application startup
 LoggerUtils.log_startup_info("AudibleMind Backend", "1.0.0", 
@@ -21,6 +26,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Add exception handler for request validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "detail": "Invalid request format. Please check your JSON syntax.",
+            "error": str(exc)
+        }
+    )
+
 # Add CORS middleware
 cors_origins = config.get_cors_origins()
 logger.info(f"🌐 Configuring CORS for origins: {cors_origins}")
@@ -31,6 +47,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logger.info("🔄 Downloading nltk resources")
+nltk.download('punkt')
+nltk.download('stopwords')
+logger.info("✅ nltk resources downloaded successfully")
 
 # Add request logging middleware
 @app.middleware("http")
@@ -95,6 +116,7 @@ async def shutdown_event():
 logger.info("📋 Registering API routers")
 app.include_router(document_router, tags=["documents"])
 app.include_router(chats_router, tags=["chats"])
+app.include_router(audio_router, prefix="/audio", tags=["audio"])
 logger.info("✅ All routers registered successfully")
 
 if __name__ == "__main__":
@@ -103,6 +125,7 @@ if __name__ == "__main__":
         "main:app", 
         host=config.server.host, 
         port=config.server.port, 
-        reload=config.server.debug,
+        # reload=config.server.debug,
+        reload=False,
         log_level="info" if not config.server.debug else "debug"
     )

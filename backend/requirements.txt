@@ -17,3 +17,4 @@ psutil
 langdetect==1.0.9
 nltk==3.8.1
 spacy==3.7.2
+pyttsx3

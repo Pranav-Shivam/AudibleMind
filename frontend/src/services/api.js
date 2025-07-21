@@ -305,4 +305,82 @@ export const utils = {
   }
 };
 
+// Audio API for text-to-speech functionality
+export const audioApi = {
+  /**
+   * Convert text to speech
+   * @param {string} text - Text to convert to speech
+   * @param {string} filename - Optional filename for the audio file
+   * @returns {Promise<Blob>} - Audio blob
+   */
+  async textToSpeech(text, filename = null) {
+    const formData = new FormData();
+    formData.append('text', text);
+    if (filename) {
+      formData.append('filename', filename);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/audio/text-to-speech/`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Text-to-speech failed: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch (e) {
+          errorMessage = `Text-to-speech failed: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new ApiError(errorMessage, response.status, null);
+      }
+
+      return await response.blob();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Network error: Could not connect to audio server', 0, null);
+    }
+  },
+
+  /**
+   * Get available voices
+   * @returns {Promise<Object>} - Available voices
+   */
+  async getVoices() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/audio/voices/`);
+
+      if (!response.ok) {
+        let errorMessage = `Failed to get voices: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch (e) {
+          errorMessage = `Failed to get voices: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new ApiError(errorMessage, response.status, null);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Network error: Could not connect to audio server', 0, null);
+    }
+  }
+};
+
 export { ApiError }; 

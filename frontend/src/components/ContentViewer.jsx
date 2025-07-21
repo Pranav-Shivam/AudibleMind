@@ -8,14 +8,16 @@ import {
   Avatar,
   Divider,
   Image,
-  message,
   Badge,
   Tooltip,
   Progress,
-  Slider
+  Slider,
+  App
 } from 'antd';
 import shiruvoxImage from '../assets/shiruvox.png';
-import shiruvox from '../assets/shiruvox.json';
+// import shiruvox from '../assets/shiruvox.json';
+import { useParams } from 'react-router-dom';
+import { documentApi, audioApi } from '../services/api';
 import {
   PlayCircleOutlined,
   PauseCircleOutlined,
@@ -35,11 +37,12 @@ import {
   HeartOutlined,
   HeartFilled
 } from '@ant-design/icons';
-import '../components/styles/ContentViewer.css';
+import '../styles/ContentViewer.css';
 
 const { Title, Paragraph, Text } = Typography;
 
 const ShiruVoxChunk = ({ chunk }) => {
+  const { message } = App.useApp();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -49,8 +52,13 @@ const ShiruVoxChunk = ({ chunk }) => {
   const [progress, setProgress] = useState(34);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [pulseAnimation, setPulseAnimation] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [audioError, setAudioError] = useState(null);
+  const [audioElement, setAudioElement] = useState(null);
+  const [audioGenerated, setAudioGenerated] = useState(false);
 
-  const chunkIndex = shiruvox.indexOf(chunk);
+  const chunkIndex = chunk.chunk_index;
   const isFirstItem = chunkIndex === 0;
   const estimatedReadTime = Math.ceil((chunk.number_of_words || 0) / 150);
 
@@ -62,19 +70,218 @@ const ShiruVoxChunk = ({ chunk }) => {
     }
   }, [isPlaying]);
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    message.info({
-      content: isPlaying ? 'Paused' : 'Playing',
-      icon: isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />,
-      className: 'custom-message'
-    });
+  // Cleanup audio URL on unmount
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+        audioElement.load(); // Reset the audio element
+      }
+    };
+  }, [audioUrl, audioElement]);
+
+  const generateAudio = async () => {
+    try {
+      setAudioLoading(true);
+      setAudioError(null);
+      setAudioGenerated(false);
+      
+      // Clean up existing audio
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+        audioElement.load();
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      
+      console.log('Starting audio generation for text:', chunk.content.substring(0, 100) + '...');
+      
+      // Call text-to-speech API
+      const audioBlob = await audioApi.textToSpeech(
+        chunk.content, 
+        `${chunk.heading || 'shiruvox-content'}.wav`
+      );
+      
+      // Validate the blob
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('Invalid audio data received');
+      }
+      
+      console.log('Audio blob received:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+        lastModified: audioBlob.lastModified
+      });
+      
+      // Test if blob is readable
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      console.log('Audio blob array buffer size:', arrayBuffer.byteLength);
+      
+      // Create audio URL
+      const url = URL.createObjectURL(audioBlob);
+      setAudioUrl(url);
+      
+      console.log('Audio URL created:', url);
+      
+      // Create audio element but don't play yet
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      audio.volume = isMuted ? 0 : volume / 100;
+      
+      // Set up event listeners before setting src
+      audio.onloadedmetadata = () => {
+        console.log('Audio metadata loaded successfully:', {
+          duration: audio.duration,
+          readyState: audio.readyState,
+          networkState: audio.networkState
+        });
+        setAudioElement(audio);
+        setAudioGenerated(true);
+        message.success('Audio generated successfully! Click play to start.');
+      };
+      
+      audio.onended = () => {
+        console.log('Audio playback ended');
+        setIsPlaying(false);
+        setProgress(0);
+      };
+      
+      audio.ontimeupdate = () => {
+        if (audio.duration && !isNaN(audio.duration)) {
+          setProgress((audio.currentTime / audio.duration) * 100);
+        }
+      };
+      
+      audio.onerror = (error) => {
+        console.error('Audio playback error:', error);
+        console.error('Audio error details:', {
+          error: audio.error,
+          networkState: audio.networkState,
+          readyState: audio.readyState,
+          src: audio.src,
+          currentSrc: audio.currentSrc
+        });
+        
+        let errorMessage = 'Audio playback failed';
+        if (audio.error) {
+          switch (audio.error.code) {
+            case MediaError.MEDIA_ERR_ABORTED:
+              errorMessage = 'Audio playback was aborted';
+              break;
+            case MediaError.MEDIA_ERR_NETWORK:
+              errorMessage = 'Network error while loading audio';
+              break;
+            case MediaError.MEDIA_ERR_DECODE:
+              errorMessage = 'Audio decoding error';
+              break;
+            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+              errorMessage = 'Audio format not supported';
+              break;
+            default:
+              errorMessage = `Audio error: ${audio.error.message}`;
+          }
+        }
+        
+        setAudioError(errorMessage);
+        setIsPlaying(false);
+        setAudioElement(null);
+        setAudioGenerated(false);
+        message.error(errorMessage);
+      };
+      
+      audio.onloadstart = () => {
+        console.log('Audio loading started');
+      };
+      
+      audio.oncanplay = () => {
+        console.log('Audio can play');
+      };
+      
+      audio.onload = () => {
+        console.log('Audio loaded');
+      };
+      
+      // Set the source after setting up event listeners
+      audio.src = url;
+      
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      setAudioError(error.message || 'Failed to generate audio');
+      setAudioGenerated(false);
+      message.error(`Text-to-speech failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
+  const handleRetry = async () => {
+    setAudioError(null);
+    await generateAudio();
+  };
+
+  const handlePlayPause = async () => {
+    if (!audioElement) {
+      message.warning('Please generate audio first');
+      return;
+    }
+
+    if (isPlaying) {
+      // Pause audio
+      audioElement.pause();
+      setIsPlaying(false);
+      message.info({
+        content: 'Paused',
+        icon: <PauseCircleOutlined />,
+        className: 'custom-message'
+      });
+    } else {
+      // Play audio
+      try {
+        // Check if audio is ready to play
+        if (audioElement.readyState < 2) {
+          message.warning('Audio is still loading, please wait...');
+          return;
+        }
+        
+        const playPromise = audioElement.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+          message.success({
+            content: 'Playing audio',
+            icon: <PlayCircleOutlined />,
+            className: 'custom-message'
+          });
+        }
+      } catch (error) {
+        console.error('Play error:', error);
+        setAudioError(`Failed to play audio: ${error.message}`);
+        message.error('Failed to play audio. Please try again.');
+      }
+    }
   };
 
   const handleMute = () => {
     setIsMuted(!isMuted);
-    if (!isMuted) setVolume(0);
-    else setVolume(75);
+    if (!isMuted) {
+      setVolume(0);
+      // Mute audio
+      if (audioElement) {
+        audioElement.volume = 0;
+      }
+    } else {
+      setVolume(75);
+      // Unmute audio
+      if (audioElement) {
+        audioElement.volume = 0.75;
+      }
+    }
     message.info({
       content: isMuted ? 'Unmuted' : 'Muted',
       icon: isMuted ? <SoundOutlined /> : <AudioMutedOutlined />,
@@ -115,6 +322,11 @@ const ShiruVoxChunk = ({ chunk }) => {
       setIsMuted(true);
     } else {
       setIsMuted(false);
+    }
+    
+    // Update audio volume if audio is playing
+    if (audioElement) {
+      audioElement.volume = value / 100;
     }
   };
 
@@ -196,22 +408,79 @@ const ShiruVoxChunk = ({ chunk }) => {
 
         {/* Enhanced Media Controls */}
         <div className="controls-section">
+          {/* Audio Status Indicator */}
+          <div className="audio-status">
+            {audioLoading && (
+              <div className="status-item loading">
+                <Text type="secondary">🔄 Generating audio...</Text>
+              </div>
+            )}
+            {audioError && (
+              <div className="status-item error">
+                <Text type="danger">❌ {audioError}</Text>
+                <Button 
+                  type="link" 
+                  size="small" 
+                  onClick={handleRetry}
+                  style={{ padding: 0, marginLeft: 8 }}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            {audioGenerated && !isPlaying && !audioLoading && (
+              <div className="status-item ready">
+                <Text type="success">✅ Audio ready to play</Text>
+              </div>
+            )}
+            {isPlaying && (
+              <div className="status-item playing">
+                <Text type="success">🎵 Playing audio</Text>
+              </div>
+            )}
+            {!audioGenerated && !audioLoading && !audioError && (
+              <div className="status-item info">
+                <Text type="secondary">💡 Click "Generate Audio" to create audio for this content</Text>
+              </div>
+            )}
+          </div>
+
+          {/* Generate Audio Button */}
+          <div className="generate-audio-section">
+            <Button
+              type="primary"
+              icon={<AudioOutlined />}
+              onClick={generateAudio}
+              loading={audioLoading}
+              disabled={audioLoading}
+              className="generate-audio-button"
+            >
+              {audioLoading ? 'Generating...' : 
+               audioGenerated ? 'Re-generate Audio' : 'Generate Audio'}
+            </Button>
+          </div>
+
           <div className="main-controls">
             <Tooltip title="Previous" placement="top">
               <Button
                 type="text"
                 icon={<FastBackwardOutlined />}
                 className="control-button secondary"
+                disabled={!audioGenerated}
               />
             </Tooltip>
             
-            <Tooltip title={isPlaying ? 'Pause' : 'Play'} placement="top">
+            <Tooltip title={
+              !audioGenerated ? 'Generate audio first' :
+              isPlaying ? 'Pause' : 'Play'
+            } placement="top">
               <Button
                 type="primary"
                 shape="circle"
                 icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                 onClick={handlePlayPause}
-                className={`play-button ${isPlaying ? 'playing' : ''}`}
+                disabled={!audioGenerated}
+                className={`play-button ${isPlaying ? 'playing' : ''} ${audioGenerated ? 'ready' : ''}`}
               />
             </Tooltip>
             
@@ -220,6 +489,7 @@ const ShiruVoxChunk = ({ chunk }) => {
                 type="text"
                 icon={<FastForwardOutlined />}
                 className="control-button secondary"
+                disabled={!audioGenerated}
               />
             </Tooltip>
           </div>
@@ -232,11 +502,12 @@ const ShiruVoxChunk = ({ chunk }) => {
                   icon={isMuted ? <AudioMutedOutlined /> : <SoundOutlined />}
                   onClick={handleMute}
                   className="control-button"
+                  disabled={!audioGenerated}
                   onMouseEnter={() => setShowVolumeSlider(true)}
                 />
               </Tooltip>
               
-              {showVolumeSlider && (
+              {showVolumeSlider && audioGenerated && (
                 <div 
                   className="volume-slider-container"
                   onMouseLeave={() => setShowVolumeSlider(false)}
@@ -266,9 +537,14 @@ const ShiruVoxChunk = ({ chunk }) => {
 
         {/* Enhanced Content Section */}
         <div className="content-section">
+          {audioError && (
+            <div className="audio-error">
+              <Text type="danger">Audio Error: {audioError}</Text>
+            </div>
+          )}
           <div className="content-text">
             <Paragraph className="main-content">
-              {chunk.text}
+              {chunk.content}
             </Paragraph>
           </div>
         </div>
@@ -286,7 +562,7 @@ const ShiruVoxChunk = ({ chunk }) => {
                 className={`interaction-button like-button ${liked ? 'active' : ''}`}
               >
                 <Badge 
-                  count={(chunk.likes || 0) + (liked ? 1 : 0)} 
+                  count={liked ? 1 : 0} 
                   showZero={false}
                   className="interaction-badge"
                 >
@@ -303,7 +579,7 @@ const ShiruVoxChunk = ({ chunk }) => {
                 className={`interaction-button dislike-button ${disliked ? 'active' : ''}`}
               >
                 <Badge 
-                  count={(chunk.dislikes || 0) + (disliked ? 1 : 0)} 
+                  count={disliked ? 1 : 0} 
                   showZero={false}
                   className="interaction-badge"
                 >

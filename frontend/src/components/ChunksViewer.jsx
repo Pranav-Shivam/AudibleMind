@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { documentApi } from "../services/api";
 import { ProTable } from "@ant-design/pro-components";
 import { 
   Button, 
@@ -9,7 +11,8 @@ import {
   Typography, 
   Card,
   Badge,
-  Divider
+  Divider,
+  App
 } from "antd";
 import {
   PlusOutlined,
@@ -18,7 +21,6 @@ import {
   SettingOutlined,
   CopyOutlined,
   PlayCircleOutlined,
-  EditOutlined,
   ThunderboltOutlined,
   HeartFilled,
   HeartOutlined,
@@ -28,19 +30,63 @@ import {
   StarFilled
 } from "@ant-design/icons";
 import ShiruVoxChunk from "./ContentViewer";
-import shiruvox from "../assets/shiruvox.json";
-import "../components/styles/ChunkViewer.css";
+import "../styles/ChunkViewer.css";
+import Chat from "./Chat";
 
 const { Text, Title } = Typography;
 
-const ChunkViewer = () => {
+const ChunksViewer = () => {
+  const { message } = App.useApp();
+  const { documentId } = useParams();
+  const [chunks, setChunks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedChunk, setSelectedChunk] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isChatModalVisible, setIsChatModalVisible] = useState(false);
+  const [selectedChunkForChat, setSelectedChunkForChat] = useState(null);
   const [pageSize, setPageSize] = useState(5);
+
+  useEffect(() => {
+    const fetchChunks = async () => {
+      if (!documentId) return;
+      
+      try {
+        setLoading(true);
+        const response = await documentApi.getDocumentChunks(documentId);
+        setChunks(response.chunks || []);
+      } catch (error) {
+        console.error('Error fetching chunks:', error);
+        message.error('Failed to load document chunks');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChunks();
+  }, [documentId]);
 
   const handleViewChunk = (record) => {
     setSelectedChunk(record);
     setIsModalVisible(true);
+  };
+
+  const handleEnhanceWithAI = (record) => {
+    setSelectedChunkForChat(record);
+    setIsChatModalVisible(true);
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setLoading(true);
+      const response = await documentApi.getDocumentChunks(documentId);
+      setChunks(response.chunks || []);
+      message.success('Chunks refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing chunks:', error);
+      message.error('Failed to refresh chunks');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columns = [
@@ -61,7 +107,7 @@ const ChunkViewer = () => {
                 {text || "Untitled Content"}
               </div>
               <Text type="secondary" className="content-preview">
-                {record.text ? record.text.substring(0, 60) + "..." : "No preview available"}
+                {record.content ? record.content.substring(0, 60) + "..." : "No preview available"}
               </Text>
             </div>
           </div>
@@ -70,28 +116,26 @@ const ChunkViewer = () => {
     },
     {
       title: "Status",
-      dataIndex: "isUserLiked",
+      dataIndex: "is_user_liked",
       width: 120,
       align: "center",
-              render: (liked) => (
+      render: (liked) => (
         <div className="status-cell">
           <span className="status-text">
             {liked ? <HeartFilled className="heart-icon liked" /> : <HeartOutlined className="heart-icon" />}
             {liked ? "Liked" : "Not Liked"}
           </span>
-          </div>
-        ),
+        </div>
+      ),
     },
     {
       title: "Timeline",
-      dataIndex: "created_time",
+      dataIndex: "created_at",
       width: 160,
       align: "center",
-      render: (_, record) => {
-        const createdDate = new Date();
-        createdDate.setDate(createdDate.getDate() - Math.floor(Math.random() * 30));
-        const updatedDate = new Date();
-        updatedDate.setDate(updatedDate.getDate() - Math.floor(Math.random() * 7));
+      render: (createdAt, record) => {
+        const createdDate = createdAt ? new Date(createdAt) : new Date();
+        const updatedDate = record.updated_at ? new Date(record.updated_at) : new Date();
         
         return (
           <div className="timeline-cell">
@@ -110,14 +154,14 @@ const ChunkViewer = () => {
           </div>
         );
       },
-      sorter: (a, b) => new Date(a.created_time) - new Date(b.created_time),
+      sorter: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
     },
     {
       title: "Metrics",
       dataIndex: "number_of_words",
       width: 120,
       align: "center",
-      sorter: (a, b) => a.number_of_words - b.number_of_words,
+      sorter: (a, b) => (a.number_of_words || 0) - (b.number_of_words || 0),
       render: (words) => (
         <div className="metrics-cell">
           <div className="metric-item">
@@ -141,7 +185,8 @@ const ChunkViewer = () => {
               size="small"
               className="action-button copy-btn"
               onClick={() => {
-                navigator.clipboard?.writeText(record.text || "");
+                navigator.clipboard?.writeText(record.content || "");
+                message.success('Content copied to clipboard');
               }}
               icon={<CopyOutlined />}
             />
@@ -157,26 +202,14 @@ const ChunkViewer = () => {
             />
           </Tooltip>
 
-          <Tooltip title="Edit Content" placement="top">
-            <Button
-              type="text"
-              size="small"
-              className="action-button edit-btn"
-              onClick={() => {
-                console.log("Edit chunk:", record.heading);
-              }}
-              icon={<EditOutlined />}
-            />
-          </Tooltip>
+
 
           <Tooltip title="Enhance with AI" placement="top">
             <Button
               type="text"
               size="small"
               className="action-button enhance-btn"
-              onClick={() => {
-                console.log("Enhance chunk:", record.heading);
-              }}
+              onClick={() => handleEnhanceWithAI(record)}
               icon={<ThunderboltOutlined />}
             />
           </Tooltip>
@@ -191,7 +224,6 @@ const ChunkViewer = () => {
       render: (_, record) => {
         const actions = [
           { name: "Played", color: "blue", icon: <PlayCircleOutlined /> },
-          { name: "Edited", color: "green", icon: <EditOutlined /> },
           { name: "Enhanced", color: "purple", icon: <ThunderboltOutlined /> }
         ];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
@@ -213,7 +245,6 @@ const ChunkViewer = () => {
 
   return (
     <div className="chunk-viewer-container">
-
       <div className="enhanced-header">
         <div className="header-content">
           <div className="header-title">
@@ -227,17 +258,19 @@ const ChunkViewer = () => {
           </div>
           <div className="header-stats">
             <div className="stat-item">
-              <Text className="stat-value">{shiruvox.length}</Text>
+              <Text className="stat-value">{chunks.length}</Text>
               <Text className="stat-label">Total Items</Text>
             </div>
             <Divider type="vertical" style={{ height: '40px' }} />
             <div className="stat-item">
-              <Text className="stat-value">{shiruvox.filter(item => item.isUserLiked).length}</Text>
+              <Text className="stat-value">{chunks.filter(item => item.is_user_liked).length}</Text>
               <Text className="stat-label">Liked</Text>
             </div>
             <Divider type="vertical" style={{ height: '40px' }} />
             <div className="stat-item">
-              <Text className="stat-value">{Math.round(shiruvox.reduce((sum, item) => sum + (item.number_of_words || 0), 0) / shiruvox.length)}</Text>
+              <Text className="stat-value">
+                {chunks.length > 0 ? Math.round(chunks.reduce((sum, item) => sum + (item.number_of_words || 0), 0) / chunks.length) : 0}
+              </Text>
               <Text className="stat-label">Avg Words</Text>
             </div>
           </div>
@@ -245,43 +278,45 @@ const ChunkViewer = () => {
       </div>
 
       <Card className="enhanced-table">
-      <ProTable
-        rowKey="heading"
-        columns={columns}
-        dataSource={shiruvox}
-        search={false}
+        <ProTable
+          rowKey="id"
+          columns={columns}
+          dataSource={chunks}
+          loading={loading}
+          search={false}
           scroll={{ 
-            x: 1200,  // Enable horizontal scrolling when table width exceeds 1200px
-            y: 'calc(100vh - 500px)'  // Reduce height to leave more space for pagination
+            x: 1200,
+            y: 'calc(100vh - 500px)'
           }}
-        pagination={{
-          pageSize: pageSize,
-          showQuickJumper: true,
-          showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20', '50', '100'],
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          position: ['bottomCenter'],
-          onChange: (page, pageSize) => {
-            setPageSize(pageSize);
-          },
-        }}
-        toolBarRender={() => [
-          <Button
+          pagination={{
+            pageSize: pageSize,
+            showQuickJumper: true,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            position: ['bottomCenter'],
+            onChange: (page, pageSize) => {
+              setPageSize(pageSize);
+            },
+          }}
+          toolBarRender={() => [
+            <Button
               key="new"
-            icon={<PlusOutlined />}
-            type="primary"
+              icon={<PlusOutlined />}
+              type="primary"
               className="toolbar-button primary"
-            onClick={() => {
-              // Add new chunk functionality placeholder
-            }}
-          >
+              onClick={() => {
+                // Add new chunk functionality placeholder
+              }}
+            >
               Create New
-          </Button>,
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
+            </Button>,
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
               className="toolbar-button"
-            onClick={() => window.location.reload()}
+              onClick={handleRefresh}
+              loading={loading}
             >
               Refresh
             </Button>,
@@ -327,8 +362,17 @@ const ChunkViewer = () => {
           </div>
         </div>
       )}
+
+      {/* Chat Modal */}
+      {isChatModalVisible && selectedChunkForChat && (
+        <Chat
+          isVisible={isChatModalVisible}
+          onClose={() => setIsChatModalVisible(false)}
+          initialParagraph={selectedChunkForChat.content}
+        />
+      )}
     </div>
   );
 };
 
-export default ChunkViewer;
+export default ChunksViewer;
