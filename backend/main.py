@@ -42,7 +42,7 @@ cors_origins = config.get_cors_origins()
 logger.info(f"🌐 Configuring CORS for origins: {cors_origins}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

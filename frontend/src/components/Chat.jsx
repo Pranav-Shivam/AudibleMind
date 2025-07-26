@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, LoadingSpinner, ToastNotification, Input } from './shared';
 
-const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo }) => {
+const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = null }) => {
   const [formData, setFormData] = useState({
     paragraph: initialParagraph || 'Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions without being explicitly programmed. It uses algorithms to identify patterns in data and make predictions or decisions based on that data. Common applications include recommendation systems, image recognition, and natural language processing.',
     llm_provider: 'local',
@@ -109,11 +109,16 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo }) => {
       include_prem: include_prem
     };
 
-    // Add bundle information if available
-    if (bundleInfo) {
-      payload.bundle_id = bundleInfo.bundle_id;
-      payload.bundle_index = bundleInfo.bundle_index;
-      payload.bundle_text = bundleInfo.bundle_text;
+    // Add bundle information only when a bundle_id is provided
+    if (bundleInfo && bundleInfo.bundle_id) {
+      const { bundle_id, bundle_index, bundle_text } = bundleInfo;
+      payload.bundle_id = bundle_id;
+      if (bundle_index !== undefined && bundle_index !== null) {
+        payload.bundle_index = bundle_index;
+      }
+      if (bundle_text) {
+        payload.bundle_text = bundle_text;
+      }
     }
 
     // Add custom descriptions if provided
@@ -138,6 +143,11 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo }) => {
     // Add number of questions per learner if specified
     if (formData.num_questions_per_learner.trim()) {
       payload.num_questions_per_learner = parseInt(formData.num_questions_per_learner);
+    }
+
+    // Attach document ID if available
+    if (documentId) {
+      payload.document_id = documentId;
     }
 
     if (formData.llm_provider === 'local') {
@@ -489,42 +499,6 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo }) => {
 
               {/* Test Button for Debugging */}
               <div style={{margin: '16px 0', textAlign: 'center'}}>
-                <Button
-                  onClick={() => {
-                    const testData = {
-                      conversation: [
-                        {
-                          speaker: "Pranav",
-                          text: "This is a test conversation response to verify the display is working correctly.",
-                          complexity_level: "Beginner"
-                        },
-                        {
-                          speaker: "Shivam", 
-                          text: "Thank you for the explanation!",
-                          complexity_level: "Beginner"
-                        }
-                      ],
-                      total_turns: 2,
-                      success: true,
-                      message: "Test conversation generated",
-                      timestamp: new Date().toISOString(),
-                      learners_included: ["Shivam"]
-                    };
-                    setConversation(testData);
-                    setShowExport(true);
-                  }}
-                  style={{marginRight: '8px'}}
-                >
-                  Test Conversation Display
-                </Button>
-                <Button
-                  onClick={() => {
-                    setConversation(null);
-                    setShowExport(false);
-                  }}
-                >
-                  Clear Conversation
-                </Button>
               </div>
             </Card>
           </div>

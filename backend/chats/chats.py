@@ -8,6 +8,8 @@ from datetime import datetime
 from core import configuration
 from core.logger import logger, LoggerUtils
 from core.utils.bundle_service import BundleService
+from core.prompt.prompt import PromptManager
+from core.ollama_setup.connector import OllamaConnector
 config = configuration.config
 
 class Role(Enum):
@@ -509,9 +511,17 @@ class EducationConversationSystem:
                         
                         if bundle_summary:
                             # Add bundle context to conversation history
-                            bundle_context = f"📚 Bundle Context (Bundle {bundle_index or 'Unknown'}): {bundle_summary}"
-                            self.add_turn(Role.PRANAV, bundle_context)
-                            self.dialogue_manager.update_context(bundle_context)
+                            logger.info(f"📦 Bundle summary found")
+                            bundle_context = f"Explaining with chunk_text: {bundle_text}"
+                            prompt_manager = PromptManager()
+                            ollama_connector = OllamaConnector()
+                            pranav_tailored_summary_prompt = prompt_manager.get_pranav_tailored_summary_prompt(bundle_context, bundle_summary)
+                            pranav_tailored_summary = ollama_connector.make_ollama_call(pranav_tailored_summary_prompt)
+                            logger.info(f"✅ Pranav tailored summary generated", extra={
+                                "pranav_tailored_summary": pranav_tailored_summary
+                            })
+                            self.add_turn(Role.PRANAV, pranav_tailored_summary)
+                            self.dialogue_manager.update_context(pranav_tailored_summary)
                             
                             logger.info(f"✅ Bundle context added to conversation", extra={
                                 "bundle_id": bundle_id,

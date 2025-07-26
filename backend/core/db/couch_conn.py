@@ -244,3 +244,14 @@ class CouchDBConnection:
                 "duration": duration
             })
             raise
+        
+    def get_bundle_summary_by_doc_id_and_index(self, db_name: str, document_id: str, bundle_index: int) -> Optional[str]:
+        """Returns bundle_summary for a given document_id and bundle_index"""
+        db = self.get_db(db_name)
+        for row in db.view('_all_docs', include_docs=True):
+            if not row.id.startswith('_design'):
+                doc = row.doc
+                if doc.get('document_id') == document_id and doc.get('bundle_index') == bundle_index:
+                    return doc.get('bundle_summary')
+        return None
+        

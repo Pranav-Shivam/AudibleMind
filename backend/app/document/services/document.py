@@ -215,16 +215,20 @@ class DocumentService:
             chunk_save_start = time.time()
             saved_chunks = 0
             
+            # Prepare in-memory list for chunks
+            chunk_models = []
+
+            # 1️⃣ Build ChunkModel instances in memory
             for chunk_data in chunks:
                 chunk_id = generate_uid()
-                chunk_model = ChunkModel(
+                model = ChunkModel(
                     _id=chunk_id,
                     document_id=document_id,
-                    chunk_index=chunk_data['chunk_index'], # Use the sequential chunk_index
+                    chunk_index=chunk_data['chunk_index'],
                     content=chunk_data['content'],
-                    summary="",  # Will be populated on-demand
+                    summary="",
                     token_count=chunk_data['token_count'],
-                    page_number=chunk_data['page_number'],  # Add page number metadata
+                    page_number=chunk_data['page_number'],
                     number_of_words=self.global_utils.count_words(chunk_data['content']),
                     is_user_liked=False,
                     heading=self.global_utils.generate_heading(chunk_data['content']),
@@ -235,74 +239,57 @@ class DocumentService:
                     bundle_text="",
                     bundle_summary=""
                 )
-                # print(chunk_model)
-                self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, chunk_model)
-                saved_chunks += 1
-            
-            chunk_save_duration = (time.time() - chunk_save_start) * 1000
-            logger.success(f"💾 Page-level chunks saved to database", extra={
-                "upload_id": upload_id,
-                "document_id": document_id,
-                "saved_chunks": saved_chunks,
-                "save_duration": round(chunk_save_duration, 2)
-            })
-            
-            # Save bundles to database
-            bundle_save_start = time.time()
-            #  Save bundles to database, creating bundle as bundle 1 = first 4 chunks, bundle 2 = next 4 chunks, and so on.
+                chunk_models.append(model)
+
+            # 2️⃣ Build bundles and update chunks, then persist bundles on the fly
             bundle_index = 1
-            for i in range(0, len(chunks), 4):
-                bundle_id = generate_uid()
-                bundle_text = "\n".join([chunk['content'] for chunk in chunks[i:i+4]])
+            for i in range(0, len(chunk_models), 4):
+                group = chunk_models[i:i+4]
+                bundle_text = "\n".join([c.content for c in group])
                 bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
-                bundle_model = BundleModel(
+                bundle_id = generate_uid()
+
+                # Create and save BundleModel immediately
+                bundle = BundleModel(
                     _id=bundle_id,
                     bundle_index=bundle_index,
                     bundle_id=bundle_id,
-                    bundle_summary= bundle_summary,
+                    bundle_summary=bundle_summary,
                     created_at=datetime.now(),
                     updated_at=datetime.now(),
-                    chunks_text= bundle_text,  # only adding the content of the chunks to the bundle for bundle i >> i+4
+                    chunks_text=bundle_text,
                     document_id=document_id
                 )
-                self.couch_client.save_to_db(COUCH_BUNDLE_DB_NAME, bundle_model)
-                
-                # Update chunks with bundle_index - FIX: Need to update the actual ChunkModel objects, not the dictionary
-                for j in range(i, min(i+4, len(chunks))):
-                    # Get the chunk data
-                    chunk_data = chunks[j]
-                    
-                    # Create a new ChunkModel with updated bundle info
-                    updated_chunk_model = ChunkModel(
-                        _id=chunk_data.get('_id', generate_uid()),
-                        document_id=chunk_data['document_id'],
-                        chunk_index=chunk_data['chunk_index'],
-                        content=chunk_data['content'],
-                        summary="",  # Default empty summary
-                        token_count=chunk_data['token_count'],
-                        page_number=chunk_data['page_number'],
-                        number_of_words=self.global_utils.count_words(chunk_data['content']),  # Calculate from content
-                        is_user_liked=False,  # Default value
-                        heading=self.global_utils.generate_heading(chunk_data['content']),  # Generate from content
-                        created_at=datetime.now(),
-                        updated_at=datetime.now(),
-                        bundle_index=bundle_index,
-                        bundle_id=bundle_id,
-                        bundle_text=bundle_model.chunks_text,
-                        bundle_summary=bundle_model.bundle_summary
-                    )
-                    self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, updated_chunk_model)
-                
+                self.couch_client.save_to_db(COUCH_BUNDLE_DB_NAME, bundle)
+
+                # Stamp bundle metadata into chunk models
+                for chunk in group:
+                    chunk.bundle_index = bundle_index
+                    chunk.bundle_id = bundle_id
+                    chunk.bundle_text = bundle_text
+                    chunk.bundle_summary = bundle_summary
+                    chunk.updated_at = datetime.now()
+
                 bundle_index += 1
-                
-                
-            bundle_save_duration = (time.time() - bundle_save_start) * 1000
-            logger.success(f"💾 Bundles saved to database", extra={
-                "upload_id": upload_id,
-                "document_id": document_id,
-                "bundles_created": bundle_index,
-                "save_duration": round(bundle_save_duration, 2)
-            })
+
+            # 3️⃣ Persist all chunks in one phase
+            start_time = time.time()
+            saved_count = 0
+            for model in chunk_models:
+                self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, model)
+                saved_count += 1
+
+            duration_ms = (time.time() - start_time) * 1000
+            logger.success(
+                "💾 Chunks and bundles persisted efficiently",
+                extra={
+                    "upload_id": upload_id,
+                    "document_id": document_id,
+                    "chunks_saved": saved_count,
+                    "bundles_created": bundle_index - 1,
+                    "total_duration_ms": round(duration_ms, 2)
+                }
+            )
             
             
             # Save user prompt

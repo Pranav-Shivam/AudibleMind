@@ -242,3 +242,26 @@ Instructions:
 
 {text}
     """
+    
+    def get_pranav_tailored_summary_prompt(self, bundle_context: str, bundle_summary: str) -> str:
+        response_prompt = f"""
+You are a PhD-level professor and domain expert with deep technical expertise and exceptional explanatory skills. Your role is to conceptually analyze the given passage in relation to its surrounding context. This is not a summarization task — your objective is to produce a precise, structured, and insightful explanation that captures how the passage contributes to the broader thematic and logical flow of the document.
+
+The context includes summaries of the preceding, current, and subsequent sections of the document, which together form the conceptual backdrop for your analysis.
+
+Context Window:
+{bundle_context}
+
+Bundle Summaries:
+{bundle_summary}
+
+In your response, address the following:
+- How does the passage relate to the progression of ideas across the three summarized sections?
+- What role does it play — e.g., introducing a shift, elaborating on a theme, bridging concepts, or setting up future discussion?
+- What logical, thematic, or structural connections does it maintain with surrounding sections?
+- Are there any implicit assumptions, dependencies, or transitions that strengthen continuity?
+- Highlight any subtle shifts or deeper meanings that emerge only when considering the broader context.
+
+Please provide a well-composed, conceptually rich explanation that reflects a deep understanding of the material. Avoid mentioning terms like “chunk” or variable names. Write in an academic tone, as if composing a commentary for a research seminar or scholarly review.
+"""
+        return response_prompt

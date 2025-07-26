@@ -428,7 +428,7 @@ const ChunksViewer = () => {
           search={false}
           scroll={{ 
             x: 1200,
-            y: 'calc(100vh - 500px)'
+            y: 'calc(100vh - 400px)'
           }}
           pagination={{
             pageSize: pageSize,
@@ -517,11 +517,12 @@ const ChunksViewer = () => {
           isVisible={isChatModalVisible}
           onClose={() => setIsChatModalVisible(false)}
           initialParagraph={selectedChunkForChat.content}
-          bundleInfo={{
+          documentId={documentId}
+          bundleInfo={selectedChunkForChat.bundle_id ? {
             bundle_id: selectedChunkForChat.bundle_id,
             bundle_index: selectedChunkForChat.bundle_index,
             bundle_text: selectedChunkForChat.bundle_text
-          }}
+          } : null}
         />
       )}
     </div>

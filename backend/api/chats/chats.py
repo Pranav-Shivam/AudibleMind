@@ -30,6 +30,7 @@ class TechnicalParagraphRequest(BaseModel):
     bundle_id: Optional[str] = Field(default=None, description="Bundle ID for additional context")
     bundle_index: Optional[int] = Field(default=None, description="Bundle index for additional context")
     bundle_text: Optional[str] = Field(default=None, description="Bundle text for additional context")
+    document_id: Optional[str] = Field(default=None, description="Identifier of the source document")
 
 class ConversationTurnResponse(BaseModel):
     speaker: str = Field(..., description="Name of the speaker")
@@ -142,7 +143,8 @@ async def generate_conversation(
         "llm_provider": request.llm_provider,
         "max_turns": request.max_turns_per_learner,
         "include_shivam": request.include_shivam,
-        "include_prem": request.include_prem
+        "include_prem": request.include_prem,
+        "document_id": request.document_id
     })
     
     try:
@@ -157,6 +159,21 @@ async def generate_conversation(
                 "include_shivam": request.include_shivam,
                 "include_prem": request.include_prem
             })
+        # Pretty-print supplied bundle info (if any) and document identifier
+        print("--------------------------------")
+        if request.bundle_id or request.bundle_text or request.bundle_index is not None:
+            print("Bundle Information:")
+            if request.bundle_id:
+                print(f"  • Bundle ID   : {request.bundle_id}")
+            if request.bundle_index is not None:
+                print(f"  • Bundle Index: {request.bundle_index}")
+            if request.bundle_text:
+                print(f"  • Bundle Text : {request.bundle_text}")
+        else:
+            print("No bundle information supplied.")
+        
+        print(f"Document ID: {request.document_id or 'N/A'}")
+        print("--------------------------------")
         
         logger.info(f"📝 Processing paragraph", extra={
             "request_id": request_id,

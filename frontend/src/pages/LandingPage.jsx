@@ -142,17 +142,17 @@ const LandingPage = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
       background: 'linear-gradient(135deg, var(--color-primary-subtle) 0%, white 50%, var(--color-surface-secondary) 100%)'
     }}>
       {/* Header */}
       <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        flexShrink: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        borderBottom: '1px solid var(--color-border-subtle)',
         boxShadow: 'var(--shadow-sm)'
       }}>
         <div style={{
@@ -164,7 +164,7 @@ const LandingPage = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: '64px'
+            height: '48px'
           }}>
             <div style={{
               display: 'flex',
@@ -172,27 +172,26 @@ const LandingPage = () => {
               gap: 'var(--spacing-3)'
             }}>
               <div style={{
-                width: '40px',
-                height: '40px',
+                width: '32px',
+                height: '32px',
                 background: 'var(--gradient-primary)',
-                borderRadius: 'var(--radius-xl)',
+                borderRadius: 'var(--radius-lg)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 'var(--shadow-lg)'
+                justifyContent: 'center'
               }}>
                 <span style={{
                   color: 'white',
-                  fontSize: 'var(--text-xl)',
+                  fontSize: 'var(--text-base)',
                   fontWeight: 'var(--font-weight-bold)'
                 }}>📄</span>
               </div>
               <div>
                 <h1 style={{
-                  fontSize: 'var(--text-xl)',
+                  fontSize: 'var(--text-base)',
                   fontWeight: 'var(--font-weight-bold)',
                   color: 'var(--color-text-primary)'
-                }}>AudibleMind</h1>
+                }}>ShiruVox</h1>
                 <p style={{
                   fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-secondary)'
@@ -214,7 +213,7 @@ const LandingPage = () => {
                 fontSize: 'var(--text-sm)',
                 fontWeight: 'var(--font-weight-medium)'
               }}>
-                ✨ Powered by AI
+                🚀 Transform Your Documents with AI
               </span>
             </div>
           </div>
@@ -223,37 +222,27 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <main style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
         maxWidth: '64rem',
         margin: '0 auto',
-        padding: 'var(--spacing-8) var(--spacing-4)'
+        padding: isMobile ? 'var(--spacing-3)' : 'var(--spacing-4)',
+        width: '100%'
       }}>
         {/* Hero Section */}
         <div style={{
           textAlign: 'center',
-          marginBottom: 'var(--spacing-12)',
-          animation: 'fadeIn 0.6s ease-out'
+          marginBottom: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
+          animation: 'fadeIn 0.6s ease-out',
+          padding: isMobile ? 'var(--spacing-1) 0' : 'var(--spacing-2) 0'
         }}>
-          <div style={{ marginBottom: 'var(--spacing-6)' }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: 'var(--spacing-2) var(--spacing-4)',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--color-primary-subtle)',
-              color: 'var(--color-primary)',
-              fontSize: 'var(--text-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              marginBottom: 'var(--spacing-4)'
-            }}>
-              🚀 Transform Your Documents with AI
-            </span>
-          </div>
           <h1 style={{
-            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontSize: isMobile ? 'clamp(1.1rem, 4vw, 1.75rem)' : 'clamp(1.25rem, 3.5vw, 2rem)',
             fontWeight: 'var(--font-weight-bold)',
             color: 'var(--color-text-primary)',
-            marginBottom: 'var(--spacing-6)',
-            lineHeight: 1.2
+            marginBottom: isMobile ? 'var(--spacing-1)' : 'var(--spacing-2)',
+            lineHeight: 1.1
           }}>
             Turn Your PDFs into 
             <span style={{
@@ -266,41 +255,48 @@ const LandingPage = () => {
             </span>
           </h1>
           <p style={{
-            fontSize: 'var(--text-xl)',
+            fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
             color: 'var(--color-text-secondary)',
-            maxWidth: '48rem',
+            maxWidth: '36rem',
             margin: '0 auto',
-            lineHeight: 1.6
+            lineHeight: 1.3
           }}>
-            Upload your PDF documents to extract intelligent summaries, interactive chunks, and AI-powered conversations. 
-            Get instant insights with advanced analysis and seamless content exploration.
+            Upload your PDF documents to extract intelligent summaries, interactive chunks, and AI-powered conversations.
           </p>
         </div>
 
         {/* Upload Section */}
-        <Card padding="lg" shadow="xl" style={{
-          marginBottom: 'var(--spacing-12)',
-          animation: 'slideUp 0.6s ease-out'
+        <Card padding="sm" shadow="lg" style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideUp 0.6s ease-out',
+          marginBottom: isMobile ? 'var(--spacing-1)' : 'var(--spacing-2)'
         }}>
           {!isUploading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-8)' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
+              flex: 1
+            }}>
               {/* File Upload Area */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  color: 'var(--color-text-primary)',
-                  marginBottom: 'var(--spacing-4)'
-                }}>
-                  📄 Upload Your PDF Document
-                </label>
+              <div style={{ flex: 1 }}>
+                                  <label style={{
+                    display: 'block',
+                    fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: 'var(--spacing-2)'
+                  }}>
+                    📄 Upload Your PDF Document
+                  </label>
                 <div
                   style={{
                     position: 'relative',
                     border: '2px dashed',
-                    borderRadius: 'var(--radius-xl)',
-                    padding: 'var(--spacing-8)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: isMobile ? 'var(--spacing-4)' : 'var(--spacing-6)',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all var(--transition-normal)',
@@ -314,7 +310,11 @@ const LandingPage = () => {
                       : selectedFile 
                         ? 'var(--color-success-light)' 
                         : 'var(--color-surface-secondary)',
-                    transform: isDragOver ? 'scale(1.02)' : 'scale(1)'
+                    transform: isDragOver ? 'scale(1.01)' : 'scale(1)',
+                    minHeight: isMobile ? '100px' : '120px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -333,7 +333,7 @@ const LandingPage = () => {
                     <div style={{ textAlign: 'center' }}>
                       <FileCheckIcon />
                       <h3 style={{
-                        fontSize: 'var(--text-lg)',
+                        fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
                         fontWeight: 'var(--font-weight-semibold)',
                         color: 'var(--color-success-dark)',
                         marginTop: 'var(--spacing-2)',
@@ -343,7 +343,8 @@ const LandingPage = () => {
                       </h3>
                       <p style={{
                         color: 'var(--color-success)',
-                        marginBottom: 'var(--spacing-4)'
+                        fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)',
+                        marginBottom: 'var(--spacing-3)'
                       }}>
                         {selectedFile.name} ({formatFileSize(selectedFile.size)})
                       </p>
@@ -368,7 +369,7 @@ const LandingPage = () => {
                     <div style={{ textAlign: 'center' }}>
                       <UploadIcon />
                       <h3 style={{
-                        fontSize: 'var(--text-lg)',
+                        fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
                         fontWeight: 'var(--font-weight-semibold)',
                         color: 'var(--color-text-secondary)',
                         marginTop: 'var(--spacing-2)',
@@ -377,7 +378,8 @@ const LandingPage = () => {
                         Click to upload or drag and drop
                       </h3>
                       <p style={{
-                        color: 'var(--color-text-tertiary)'
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)'
                       }}>
                         PDF files only • Max 50MB • Secure processing
                       </p>
@@ -390,10 +392,10 @@ const LandingPage = () => {
               <div>
                 <label style={{
                   display: 'block',
-                  fontSize: 'var(--text-lg)',
+                  fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)',
                   fontWeight: 'var(--font-weight-semibold)',
                   color: 'var(--color-text-primary)',
-                  marginBottom: 'var(--spacing-4)'
+                  marginBottom: 'var(--spacing-2)'
                 }}>
                   💬 Custom Instructions (Optional)
                 </label>
@@ -404,8 +406,8 @@ const LandingPage = () => {
                   maxLength={500}
                   style={{
                     width: '100%',
-                    minHeight: '120px',
-                    padding: 'var(--spacing-4)',
+                    minHeight: isMobile ? '60px' : '80px',
+                    padding: 'var(--spacing-2)',
                     border: '2px solid var(--color-border-subtle)',
                     borderRadius: 'var(--radius-lg)',
                     fontSize: 'var(--text-base)',
@@ -430,13 +432,13 @@ const LandingPage = () => {
                   marginTop: 'var(--spacing-2)'
                 }}>
                   <p style={{
-                    fontSize: 'var(--text-sm)',
+                    fontSize: 'var(--text-xs)',
                     color: 'var(--color-text-secondary)'
                   }}>
                     Provide specific instructions to tailor the summary to your needs.
                   </p>
                   <span style={{
-                    fontSize: 'var(--text-sm)',
+                    fontSize: 'var(--text-xs)',
                     color: 'var(--color-text-tertiary)'
                   }}>
                     {userPrompt.length}/500
@@ -452,19 +454,27 @@ const LandingPage = () => {
                 fullWidth
                 disabled={!selectedFile}
                 style={{
-                  fontSize: 'var(--text-lg)',
-                  padding: 'var(--spacing-4) var(--spacing-8)'
+                  fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)',
+                  padding: isMobile ? 'var(--spacing-2) var(--spacing-4)' : 'var(--spacing-3) var(--spacing-6)'
                 }}
               >
                 Upload & Analyze Document
               </Button>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-              <LoadingSpinner size="xl" text="Processing your document..." />
-              <div style={{ marginTop: 'var(--spacing-6)' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: isMobile ? 'var(--spacing-6)' : 'var(--spacing-8)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flex: 1
+            }}>
+              <LoadingSpinner size="lg" text="Processing your document..." />
+              <div style={{ marginTop: 'var(--spacing-4)' }}>
                 <h3 style={{
-                  fontSize: 'var(--text-2xl)',
+                  fontSize: isMobile ? 'var(--text-xl)' : 'var(--text-2xl)',
                   fontWeight: 'var(--font-weight-bold)',
                   color: 'var(--color-text-primary)',
                   marginBottom: 'var(--spacing-2)'
@@ -473,7 +483,8 @@ const LandingPage = () => {
                 </h3>
                 <p style={{
                   color: 'var(--color-text-secondary)',
-                  marginBottom: 'var(--spacing-6)'
+                  marginBottom: 'var(--spacing-4)',
+                  fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)'
                 }}>
                   Our AI is extracting insights and creating your summary...
                 </p>
@@ -483,7 +494,7 @@ const LandingPage = () => {
                   width: '100%',
                   backgroundColor: 'var(--color-border-subtle)',
                   borderRadius: 'var(--radius-full)',
-                  height: '12px',
+                  height: '8px',
                   overflow: 'hidden',
                   marginBottom: 'var(--spacing-2)'
                 }}>
@@ -495,44 +506,12 @@ const LandingPage = () => {
                   }} />
                 </div>
                 <p style={{
-                  fontSize: 'var(--text-sm)',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-secondary)',
                   marginTop: 'var(--spacing-2)'
                 }}>
                   {uploadProgress}% Complete
                 </p>
-                
-                {/* Loading Dots */}
-                <div style={{
-                  display: 'flex',
-                  gap: 'var(--spacing-2)',
-                  justifyContent: 'center',
-                  marginTop: 'var(--spacing-6)'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    backgroundColor: 'var(--color-primary)',
-                    borderRadius: '50%',
-                    animation: 'pulse 1s ease-in-out infinite'
-                  }} />
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    backgroundColor: 'var(--color-primary)',
-                    borderRadius: '50%',
-                    animation: 'pulse 1s ease-in-out infinite',
-                    animationDelay: '0.2s'
-                  }} />
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    backgroundColor: 'var(--color-primary)',
-                    borderRadius: '50%',
-                    animation: 'pulse 1s ease-in-out infinite',
-                    animationDelay: '0.4s'
-                  }} />
-                </div>
               </div>
             </div>
           )}
@@ -540,92 +519,89 @@ const LandingPage = () => {
 
         {/* Features Section */}
         <div style={{
-          textAlign: 'center',
-          padding: 'var(--spacing-12) 0',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--spacing-6)'
+          padding: isMobile ? 'var(--spacing-2) 0' : 'var(--spacing-3) 0',
+          borderTop: '1px solid var(--color-border-subtle)',
+          marginTop: 'auto'
         }}>
-          <h2 style={{
-            fontSize: 'var(--text-3xl)',
-            fontWeight: 'var(--font-weight-bold)',
-            color: 'var(--color-text-primary)',
-            marginBottom: 'var(--spacing-4)'
-          }}>
-            Why Choose AudibleMind?
-          </h2>
-          
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-6)',
-            marginTop: 'var(--spacing-8)'
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: isMobile ? 'var(--spacing-3)' : 'var(--spacing-6)',
+            flexWrap: 'wrap'
           }}>
             {[
               {
                 icon: '⚡',
                 title: 'Lightning Fast',
-                description: 'AI-powered processing delivers summaries in seconds with advanced optimization',
-                color: 'var(--color-warning)'
+                description: 'AI-powered summaries in seconds'
               },
               {
                 icon: '🧠',
                 title: 'Smart Analysis',
-                description: 'Advanced AI understands context, extracts key insights, and identifies patterns',
-                color: 'var(--color-primary)'
+                description: 'Advanced context understanding'
               },
               {
                 icon: '⚙️',
                 title: 'Customizable',
-                description: 'Tailor summaries with custom prompts, instructions, and specific focus areas',
-                color: 'var(--color-secondary)'
+                description: 'Tailor to your specific needs'
               },
               {
                 icon: '🔒',
                 title: 'Secure & Private',
-                description: 'Enterprise-grade encryption with GDPR compliance and no permanent storage',
-                color: 'var(--color-success)'
+                description: 'Enterprise-grade encryption'
               }
             ].map((feature, index) => (
-              <Card
+              <div
                 key={index}
-                variant="glass"
                 style={{
-                  textAlign: 'center',
-                  padding: 'var(--spacing-6)',
-                  transition: 'all var(--transition-normal)'
-                }}
-                hover
-              >
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  background: `linear-gradient(135deg, ${feature.color} 0%, ${feature.color}dd 100%)`,
-                  borderRadius: 'var(--radius-2xl)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-2xl)',
-                  margin: '0 auto var(--spacing-4)',
+                  gap: 'var(--spacing-2)',
+                  padding: 'var(--spacing-2) var(--spacing-3)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-surface-secondary)',
+                  transition: 'all var(--transition-normal)',
+                  cursor: 'pointer',
+                  minWidth: isMobile ? '140px' : '160px',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-surface-primary)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <span style={{
+                  fontSize: isMobile ? 'var(--text-lg)' : 'var(--text-xl)',
+                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
                   transition: 'transform var(--transition-normal)'
                 }}>
                   {feature.icon}
+                </span>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{
+                    fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: '1px'
+                  }}>
+                    {feature.title}
+                  </div>
+                  <div style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.2
+                  }}>
+                    {feature.description}
+                  </div>
                 </div>
-                <h3 style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  color: 'var(--color-text-primary)',
-                  marginBottom: 'var(--spacing-2)'
-                }}>
-                  {feature.title}
-                </h3>
-                <p style={{
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.6
-                }}>
-                  {feature.description}
-                </p>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
