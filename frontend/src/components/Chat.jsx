@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, LoadingSpinner, ToastNotification, Input } from './shared';
 
-const Chat = ({ initialParagraph, isVisible, onClose }) => {
+const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo }) => {
   const [formData, setFormData] = useState({
     paragraph: initialParagraph || 'Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions without being explicitly programmed. It uses algorithms to identify patterns in data and make predictions or decisions based on that data. Common applications include recommendation systems, image recognition, and natural language processing.',
     llm_provider: 'local',
@@ -108,6 +108,13 @@ const Chat = ({ initialParagraph, isVisible, onClose }) => {
       include_shivam: include_shivam,
       include_prem: include_prem
     };
+
+    // Add bundle information if available
+    if (bundleInfo) {
+      payload.bundle_id = bundleInfo.bundle_id;
+      payload.bundle_index = bundleInfo.bundle_index;
+      payload.bundle_text = bundleInfo.bundle_text;
+    }
 
     // Add custom descriptions if provided
     if (formData.shivam_description.trim()) {

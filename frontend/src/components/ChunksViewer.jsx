@@ -46,6 +46,24 @@ const ChunksViewer = () => {
   const [selectedChunkForChat, setSelectedChunkForChat] = useState(null);
   const [pageSize, setPageSize] = useState(5);
 
+  // Global audio manager
+  const [globalAudioElements, setGlobalAudioElements] = useState(new Set());
+
+  // Function to stop all registered audio elements
+  const stopAllGlobalAudio = () => {
+    console.log('Stopping all global audio elements:', globalAudioElements.size);
+    globalAudioElements.forEach(audio => {
+      if (audio && !audio.paused) {
+        console.log('Stopping global audio element');
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        audio.load();
+      }
+    });
+    setGlobalAudioElements(new Set());
+  };
+
   useEffect(() => {
     const fetchChunks = async () => {
       if (!documentId) return;
@@ -64,6 +82,48 @@ const ChunksViewer = () => {
 
     fetchChunks();
   }, [documentId]);
+
+  // Cleanup audio when modal is closed
+  useEffect(() => {
+    if (!isModalVisible) {
+      console.log('Modal closed - cleaning up audio via useEffect...');
+      
+      // Stop all audio when modal is closed
+      const audioElements = document.querySelectorAll('audio');
+      console.log('useEffect found audio elements:', audioElements.length);
+      
+      audioElements.forEach((audio, index) => {
+        console.log(`useEffect stopping audio element ${index}:`, {
+          paused: audio.paused,
+          currentTime: audio.currentTime,
+          src: audio.src.substring(0, 50) + '...',
+          readyState: audio.readyState
+        });
+        
+        // Force stop the audio
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        audio.load();
+        
+        // Remove all event listeners
+        audio.onplay = null;
+        audio.onpause = null;
+        audio.onended = null;
+        audio.onerror = null;
+        audio.onloadstart = null;
+        audio.oncanplay = null;
+        audio.onload = null;
+        audio.ontimeupdate = null;
+        audio.onloadedmetadata = null;
+      });
+      
+      // Also try to stop any media sessions
+      if (navigator.mediaSession) {
+        navigator.mediaSession.setActionHandler('stop', () => {});
+      }
+    }
+  }, [isModalVisible]);
 
   const handleViewChunk = (record) => {
     setSelectedChunk(record);
@@ -87,6 +147,88 @@ const ChunksViewer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    console.log('Closing modal - stopping all audio...');
+    
+    // Method 1: Stop all audio elements in the entire document
+    const allAudioElements = document.querySelectorAll('audio');
+    console.log('Found audio elements:', allAudioElements.length);
+    
+    allAudioElements.forEach((audio, index) => {
+      console.log(`Stopping audio element ${index}:`, {
+        paused: audio.paused,
+        currentTime: audio.currentTime,
+        src: audio.src.substring(0, 50) + '...',
+        readyState: audio.readyState
+      });
+      
+      // Force stop the audio
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = '';
+      audio.load();
+      
+      // Remove all event listeners
+      audio.onplay = null;
+      audio.onpause = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onloadstart = null;
+      audio.oncanplay = null;
+      audio.onload = null;
+      audio.ontimeupdate = null;
+      audio.onloadedmetadata = null;
+    });
+    
+    // Method 2: Stop any audio contexts
+    if (window.AudioContext || window.webkitAudioContext) {
+      const audioContexts = document.querySelectorAll('audio').forEach(audio => {
+        if (audio.srcObject) {
+          audio.srcObject = null;
+        }
+      });
+    }
+    
+    // Method 3: Force stop any media sessions
+    if (navigator.mediaSession) {
+      navigator.mediaSession.setActionHandler('stop', () => {});
+    }
+    
+    // Method 4: Use the Web Audio API to stop all audio
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'running') {
+        audioContext.suspend();
+      }
+    } catch (e) {
+      console.log('Web Audio API not available');
+    }
+    
+    // Method 5: Dispatch a custom event to stop audio
+    window.dispatchEvent(new CustomEvent('stopAllAudio'));
+    
+    // Method 6: Stop all global audio elements
+    stopAllGlobalAudio();
+    
+    // Method 7: Try to stop any remaining audio with a delay
+    setTimeout(() => {
+      const remainingAudio = document.querySelectorAll('audio');
+      console.log('Checking for remaining audio after delay:', remainingAudio.length);
+      remainingAudio.forEach(audio => {
+        if (!audio.paused) {
+          console.log('Force stopping remaining audio');
+          audio.pause();
+          audio.currentTime = 0;
+          audio.src = '';
+          audio.load();
+        }
+      });
+    }, 100);
+    
+    setIsModalVisible(false);
+    setSelectedChunk(null);
   };
 
   const columns = [
@@ -354,11 +496,17 @@ const ChunksViewer = () => {
           <div className="modal-content">
             <Button
               className="modal-close"
-              onClick={() => setIsModalVisible(false)}
+              onClick={handleCloseModal}
             >
               ✕
             </Button>
-            <ShiruVoxChunk chunk={selectedChunk} />
+            <ShiruVoxChunk 
+              key={selectedChunk.chunk_index} 
+              chunk={selectedChunk} 
+              onAudioCreated={(audioElement) => {
+                setGlobalAudioElements(prev => new Set([...prev, audioElement]));
+              }}
+            />
           </div>
         </div>
       )}
@@ -369,6 +517,11 @@ const ChunksViewer = () => {
           isVisible={isChatModalVisible}
           onClose={() => setIsChatModalVisible(false)}
           initialParagraph={selectedChunkForChat.content}
+          bundleInfo={{
+            bundle_id: selectedChunkForChat.bundle_id,
+            bundle_index: selectedChunkForChat.bundle_index,
+            bundle_text: selectedChunkForChat.bundle_text
+          }}
         />
       )}
     </div>

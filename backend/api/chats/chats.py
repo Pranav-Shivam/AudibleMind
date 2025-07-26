@@ -27,6 +27,9 @@ class TechnicalParagraphRequest(BaseModel):
     shivam_questions: Optional[List[str]] = Field(default=None, description="List of questions from Shivam (optional)")
     prem_questions: Optional[List[str]] = Field(default=None, description="List of questions from Prem (optional)")
     num_questions_per_learner: Optional[int] = Field(default=None, description="Number of questions per learner (overrides max_turns_per_learner)")
+    bundle_id: Optional[str] = Field(default=None, description="Bundle ID for additional context")
+    bundle_index: Optional[int] = Field(default=None, description="Bundle index for additional context")
+    bundle_text: Optional[str] = Field(default=None, description="Bundle text for additional context")
 
 class ConversationTurnResponse(BaseModel):
     speaker: str = Field(..., description="Name of the speaker")
@@ -186,7 +189,10 @@ async def generate_conversation(
             shivam_questions=request.shivam_questions,
             prem_questions=request.prem_questions,
             num_questions_per_learner=request.num_questions_per_learner,
-            direct_mode=is_direct_mode
+            direct_mode=is_direct_mode,
+            bundle_id=request.bundle_id,
+            bundle_index=request.bundle_index,
+            bundle_text=request.bundle_text
         )
         conversation_duration = (time.time() - conversation_start) * 1000
         
@@ -252,3 +258,4 @@ async def generate_conversation(
             "llm_provider": request.llm_provider
         })
         raise HTTPException(status_code=500, detail=f"Error generating conversation: {str(e)}")
+    

@@ -42,4 +42,4 @@ class BundleModel(Document):
     created_at = DateTimeField()
     updated_at = DateTimeField()
     chunks_text = TextField()
-    
+    document_id = TextField()

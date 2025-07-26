@@ -41,7 +41,7 @@ import '../styles/ContentViewer.css';
 
 const { Title, Paragraph, Text } = Typography;
 
-const ShiruVoxChunk = ({ chunk }) => {
+const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
   const { message } = App.useApp();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -57,6 +57,7 @@ const ShiruVoxChunk = ({ chunk }) => {
   const [audioError, setAudioError] = useState(null);
   const [audioElement, setAudioElement] = useState(null);
   const [audioGenerated, setAudioGenerated] = useState(false);
+  const [originalAudioUrl, setOriginalAudioUrl] = useState(null); // Store the original URL
 
   const chunkIndex = chunk.chunk_index;
   const isFirstItem = chunkIndex === 0;
@@ -70,10 +71,72 @@ const ShiruVoxChunk = ({ chunk }) => {
     }
   }, [isPlaying]);
 
+  // Reset audio state when chunk changes
+  useEffect(() => {
+    console.log('Chunk changed to:', chunk.chunk_index);
+    // Clean up existing audio when chunk changes
+    if (audioElement) {
+      console.log('Cleaning up existing audio element');
+      audioElement.pause();
+      audioElement.src = '';
+      audioElement.load();
+      setAudioElement(null);
+    }
+    if (audioUrl && audioUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioUrl(null);
+    setAudioGenerated(false);
+    setAudioError(null);
+    setIsPlaying(false);
+    setProgress(0);
+  }, [chunk.chunk_index]); // Reset when chunk index changes
+
+  // Listen for global stop audio event
+  useEffect(() => {
+    const handleStopAllAudio = () => {
+      console.log('ContentViewer received stopAllAudio event');
+      if (audioElement) {
+        console.log('Stopping audio element from event');
+        console.log('Audio element before cleanup:', {
+          src: audioElement.src.substring(0, 100) + '...',
+          currentSrc: audioElement.currentSrc.substring(0, 100) + '...',
+          paused: audioElement.paused,
+          readyState: audioElement.readyState
+        });
+        
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        audioElement.src = '';
+        audioElement.load();
+        
+        // Clear integrity interval
+        if (audioElement._integrityInterval) {
+          clearInterval(audioElement._integrityInterval);
+          audioElement._integrityInterval = null;
+        }
+        
+        setAudioElement(null);
+      }
+      setAudioUrl(null);
+      setOriginalAudioUrl(null);
+      setAudioGenerated(false);
+      setAudioError(null);
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    window.addEventListener('stopAllAudio', handleStopAllAudio);
+    
+    return () => {
+      window.removeEventListener('stopAllAudio', handleStopAllAudio);
+    };
+  }, [audioElement]);
+
   // Cleanup audio URL on unmount
   useEffect(() => {
     return () => {
-      if (audioUrl) {
+      if (audioUrl && audioUrl.startsWith('blob:')) {
         URL.revokeObjectURL(audioUrl);
       }
       if (audioElement) {
@@ -82,7 +145,7 @@ const ShiruVoxChunk = ({ chunk }) => {
         audioElement.load(); // Reset the audio element
       }
     };
-  }, [audioUrl, audioElement]);
+  }, []); // Only run on unmount
 
   const generateAudio = async () => {
     try {
@@ -90,13 +153,34 @@ const ShiruVoxChunk = ({ chunk }) => {
       setAudioError(null);
       setAudioGenerated(false);
       
-      // Clean up existing audio
+      // Clean up existing audio completely
       if (audioElement) {
+        console.log('Cleaning up existing audio element before generating new one');
         audioElement.pause();
+        audioElement.currentTime = 0;
         audioElement.src = '';
         audioElement.load();
+        
+        // Remove all event listeners
+        audioElement.onplay = null;
+        audioElement.onpause = null;
+        audioElement.onended = null;
+        audioElement.onerror = null;
+        audioElement.onloadstart = null;
+        audioElement.oncanplay = null;
+        audioElement.onload = null;
+        audioElement.ontimeupdate = null;
+        audioElement.onloadedmetadata = null;
+        
+        // Clear integrity interval
+        if (audioElement._integrityInterval) {
+          clearInterval(audioElement._integrityInterval);
+          audioElement._integrityInterval = null;
+        }
+        
+        setAudioElement(null);
       }
-      if (audioUrl) {
+      if (audioUrl && audioUrl.startsWith('blob:')) {
         URL.revokeObjectURL(audioUrl);
       }
       
@@ -123,28 +207,49 @@ const ShiruVoxChunk = ({ chunk }) => {
       const arrayBuffer = await audioBlob.arrayBuffer();
       console.log('Audio blob array buffer size:', arrayBuffer.byteLength);
       
-      // Create audio URL
-      const url = URL.createObjectURL(audioBlob);
-      setAudioUrl(url);
+      // Validate blob data
+      if (arrayBuffer.byteLength === 0) {
+        throw new Error('Audio blob is empty');
+      }
       
-      console.log('Audio URL created:', url);
+      // Create a new blob from the array buffer to ensure it's valid
+      const validatedBlob = new Blob([arrayBuffer], { type: 'audio/wav' });
+      
+      // Try using data URL instead of blob URL
+      const reader = new FileReader();
+      const urlPromise = new Promise((resolve, reject) => {
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          console.log('Data URL created, length:', dataUrl.length);
+          resolve(dataUrl);
+        };
+        reader.onerror = () => reject(new Error('Failed to create data URL'));
+      });
+      
+      reader.readAsDataURL(validatedBlob);
+      const url = await urlPromise;
+      setAudioUrl(url);
+      setOriginalAudioUrl(url); // Store the original URL for validation
+      
+      console.log('Audio URL created:', url.substring(0, 100) + '...');
+      console.log('Blob details:', {
+        size: validatedBlob.size,
+        type: validatedBlob.type,
+        lastModified: validatedBlob.lastModified
+      });
       
       // Create audio element but don't play yet
       const audio = new Audio();
-      audio.preload = 'metadata';
+      audio.preload = 'auto'; // Change to auto to ensure full loading
       audio.volume = isMuted ? 0 : volume / 100;
+      audio.crossOrigin = 'anonymous'; // Add cross-origin attribute
+      
+      // Verify the URL is valid before proceeding
+      if (!url || !url.startsWith('data:audio/')) {
+        throw new Error('Invalid audio URL generated');
+      }
       
       // Set up event listeners before setting src
-      audio.onloadedmetadata = () => {
-        console.log('Audio metadata loaded successfully:', {
-          duration: audio.duration,
-          readyState: audio.readyState,
-          networkState: audio.networkState
-        });
-        setAudioElement(audio);
-        setAudioGenerated(true);
-        message.success('Audio generated successfully! Click play to start.');
-      };
       
       audio.onended = () => {
         console.log('Audio playback ended');
@@ -188,11 +293,23 @@ const ShiruVoxChunk = ({ chunk }) => {
           }
         }
         
+        // Check if the source is corrupted
+        if (audio.src && audio.src.includes('localhost:5173/chunks/')) {
+          errorMessage = 'Audio source corrupted. Please regenerate audio.';
+          console.error('Corrupted audio source detected:', audio.src);
+        }
+        
         setAudioError(errorMessage);
         setIsPlaying(false);
         setAudioElement(null);
         setAudioGenerated(false);
         message.error(errorMessage);
+        
+        // Clean up the audio URL on error
+        if (audioUrl) {
+          // For data URLs, we don't need to revoke anything
+          setAudioUrl(null);
+        }
       };
       
       audio.onloadstart = () => {
@@ -208,7 +325,55 @@ const ShiruVoxChunk = ({ chunk }) => {
       };
       
       // Set the source after setting up event listeners
+      console.log('Setting audio src to:', url.substring(0, 100) + '...');
       audio.src = url;
+      console.log('Audio src after setting:', audio.src.substring(0, 100) + '...');
+      audio.load(); // Explicitly load the audio
+      
+      // Add a timeout to prevent stuck loading
+      const loadTimeout = setTimeout(() => {
+        if (audio.readyState < 2) {
+          console.error('Audio loading timeout');
+          audio.onerror(new Error('Audio loading timeout'));
+        }
+      }, 10000); // 10 second timeout
+      
+      // Clear timeout when audio loads successfully
+      audio.onloadedmetadata = () => {
+        clearTimeout(loadTimeout);
+        console.log('Audio metadata loaded successfully:', {
+          duration: audio.duration,
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          src: audio.src.substring(0, 100) + '...',
+          currentSrc: audio.currentSrc.substring(0, 100) + '...'
+        });
+        setAudioElement(audio);
+        setAudioGenerated(true);
+        
+        // Register with global audio manager
+        if (onAudioCreated) {
+          onAudioCreated(audio);
+        }
+        
+        // Add protection against src corruption
+        const originalSrc = audio.src;
+        const checkSrcIntegrity = () => {
+          if (audio.src !== originalSrc && audio.src.includes('localhost:5173/chunks/')) {
+            console.warn('Audio src corruption detected, restoring...');
+            audio.src = originalSrc;
+            audio.load();
+          }
+        };
+        
+        // Check src integrity periodically
+        const integrityInterval = setInterval(checkSrcIntegrity, 1000);
+        
+        // Store the interval for cleanup
+        audio._integrityInterval = integrityInterval;
+        
+        message.success('Audio generated successfully! Click play to start.');
+      };
       
     } catch (error) {
       console.error('Text-to-speech error:', error);
@@ -248,6 +413,49 @@ const ShiruVoxChunk = ({ chunk }) => {
           message.warning('Audio is still loading, please wait...');
           return;
         }
+        
+        // Check if the audio source is valid using original URL
+        if (!originalAudioUrl || !audioElement.src || 
+            audioElement.src.includes('localhost:5173/chunks/') ||
+            !audioElement.src.startsWith('data:audio/')) {
+          console.error('Invalid audio source detected:', audioElement.src);
+          console.error('Original URL:', originalAudioUrl);
+          console.error('Audio element state:', {
+            src: audioElement.src,
+            currentSrc: audioElement.currentSrc,
+            readyState: audioElement.readyState,
+            networkState: audioElement.networkState,
+            paused: audioElement.paused
+          });
+          message.error('Audio source is invalid. Please regenerate audio.');
+          setAudioError('Invalid audio source');
+          setAudioGenerated(false);
+          setAudioElement(null);
+          setOriginalAudioUrl(null);
+          return;
+        }
+        
+        // If the source has been corrupted, try to restore it
+        if (audioElement.src !== originalAudioUrl) {
+          console.log('Audio source corrupted, attempting to restore...');
+          audioElement.src = originalAudioUrl;
+          audioElement.load();
+          // Wait a bit for the audio to reload
+          setTimeout(() => {
+            if (audioElement.readyState >= 2) {
+              console.log('Audio source restored successfully');
+            } else {
+              console.error('Failed to restore audio source');
+              setAudioError('Failed to restore audio source');
+              setAudioGenerated(false);
+              setAudioElement(null);
+            }
+          }, 1000);
+          return;
+        }
+        
+        // Double-check the source before playing
+        console.log('About to play audio with source:', audioElement.src.substring(0, 100) + '...');
         
         const playPromise = audioElement.play();
         if (playPromise !== undefined) {

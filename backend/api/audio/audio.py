@@ -139,15 +139,32 @@ async def text_to_speech(text: str = Form(..., description="Text to convert to s
             # Generate UUID-based filename
             output_filename = f"speech_{uuid.uuid4().hex[:8]}.wav"
         
-        # Save to permanent location
-        permanent_path = os.path.join(AUDIO_DIR, output_filename)
-        shutil.move(temp_filename, permanent_path)
+        # Read the generated audio file as bytes
+        with open(temp_filename, 'rb') as audio_file:
+            audio_data = audio_file.read()
         
-        return FileResponse(
-            path=permanent_path,
-            filename=output_filename,
+        # Clean up temporary file
+        os.unlink(temp_filename)
+        
+        # Save to permanent location (optional - for debugging)
+        permanent_path = os.path.join(AUDIO_DIR, output_filename)
+        with open(permanent_path, 'wb') as f:
+            f.write(audio_data)
+        
+        # Return audio data as blob response
+        from fastapi.responses import Response
+        return Response(
+            content=audio_data,
             media_type="audio/wav",
-            headers={"Content-Disposition": f"attachment; filename={output_filename}"}
+            headers={
+                "Content-Disposition": f"inline; filename={output_filename}",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
         )
         
     except Exception as e:

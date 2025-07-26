@@ -235,7 +235,7 @@ class DocumentService:
                     bundle_text="",
                     bundle_summary=""
                 )
-                print(chunk_model)
+                # print(chunk_model)
                 self.couch_client.save_to_db(COUCH_CHUNK_DB_NAME, chunk_model)
                 saved_chunks += 1
             
@@ -253,14 +253,17 @@ class DocumentService:
             bundle_index = 1
             for i in range(0, len(chunks), 4):
                 bundle_id = generate_uid()
+                bundle_text = "\n".join([chunk['content'] for chunk in chunks[i:i+4]])
+                bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
                 bundle_model = BundleModel(
                     _id=bundle_id,
                     bundle_index=bundle_index,
                     bundle_id=bundle_id,
-                    bundle_summary="",
+                    bundle_summary= bundle_summary,
                     created_at=datetime.now(),
                     updated_at=datetime.now(),
-                    chunks_text= "\n".join([chunk['content'] for chunk in chunks[i:i+4]])  # only adding the content of the chunks to the bundle for bundle i >> i+4
+                    chunks_text= bundle_text,  # only adding the content of the chunks to the bundle for bundle i >> i+4
+                    document_id=document_id
                 )
                 self.couch_client.save_to_db(COUCH_BUNDLE_DB_NAME, bundle_model)
                 

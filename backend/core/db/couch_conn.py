@@ -201,3 +201,46 @@ class CouchDBConnection:
                 "duration": duration
             })
             raise
+        
+    def get_doc_by_id(self, db_name: str, doc_id: str) -> Optional[Dict[str, Any]]:
+        """Get document by id"""
+        start_time = time.time()
+        try:
+            db = self.get_db(db_name)
+            doc = db.get(doc_id)
+            duration = (time.time() - start_time) * 1000
+            logger.info(f"📊 Retrieved document {doc_id} from {db_name}")
+            LoggerUtils.log_db_operation("get_doc_by_id", db_name, doc_id=doc_id, duration=duration)
+            return doc
+        
+        except Exception as e:
+            duration = (time.time() - start_time) * 1000
+            LoggerUtils.log_error_with_context(e, {
+                "operation": "get_doc_by_id",
+                "db_name": db_name,
+                "doc_id": doc_id,
+                "duration": duration
+            })
+            raise
+    
+    def update_doc(self, db_name: str, doc_id: str, doc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update document"""
+        start_time = time.time()
+        try:
+            db = self.get_db(db_name)
+            docs = db.get(doc_id)
+            docs.update(doc)
+            duration = (time.time() - start_time) * 1000
+            logger.info(f"📊 Updated document {doc_id} in {db_name}")
+            LoggerUtils.log_db_operation("update_document", db_name, doc_id=doc_id, duration=duration)
+            return docs
+        
+        except Exception as e:
+            duration = (time.time() - start_time) * 1000
+            LoggerUtils.log_error_with_context(e, {
+                "operation": "update_document",
+                "db_name": db_name,
+                "doc_id": doc_id,
+                "duration": duration
+            })
+            raise

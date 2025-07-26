@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from core import configuration
 from core.logger import logger, LoggerUtils
+from core.utils.bundle_service import BundleService
 config = configuration.config
 
 class Role(Enum):
@@ -452,7 +453,10 @@ class EducationConversationSystem:
                             shivam_questions: List[str] = None, 
                             prem_questions: List[str] = None,
                             num_questions_per_learner: int = None,
-                            direct_mode: bool = False) -> List[ConversationTurn]:
+                            direct_mode: bool = False,
+                            bundle_id: str = None,
+                            bundle_index: int = None,
+                            bundle_text: str = None) -> List[ConversationTurn]:
         """Generate a complete educational conversation with user-provided or auto-generated questions"""
         start_time = time.time()
         
@@ -488,13 +492,49 @@ class EducationConversationSystem:
             self.add_turn(Role.PRANAV, pranav_initial_explanation)
             self.dialogue_manager.update_context(pranav_initial_explanation)
 
-            # If in direct mode, return just the initial explanation
+            # If in direct mode, enhance with bundle context if available
             if direct_mode:
-                logger.info("🎯 Direct mode: Returning Pranav's explanation only")
+                logger.info("🎯 Direct mode: Enhancing with bundle context")
+                
+                # Add bundle context if available
+                if bundle_id:
+                    try:
+                        # Initialize bundle service
+                        bundle_service = BundleService()
+                        
+                        # Get bundle summary
+                        logger.info(f"📦 Retrieving bundle summary for bundle_id: {bundle_id}")
+                        bundle_summary = bundle_service.get_bundle_summary_by_bundle_id(bundle_id)
+                        
+                        
+                        if bundle_summary:
+                            # Add bundle context to conversation history
+                            bundle_context = f"📚 Bundle Context (Bundle {bundle_index or 'Unknown'}): {bundle_summary}"
+                            self.add_turn(Role.PRANAV, bundle_context)
+                            self.dialogue_manager.update_context(bundle_context)
+                            
+                            logger.info(f"✅ Bundle context added to conversation", extra={
+                                "bundle_id": bundle_id,
+                                "bundle_text": bundle_text,
+                                "bundle_summary": bundle_summary,
+                                "bundle_index": bundle_index,
+                                "summary_length": len(bundle_summary)
+                            })
+                        else:
+                            logger.warning(f"⚠️ No bundle summary found for bundle_id: {bundle_id}")
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Error retrieving bundle context: {str(e)}", extra={
+                            "bundle_id": bundle_id,
+                            "error": str(e)
+                        })
+                        # Continue without bundle context if there's an error
+                
                 total_duration = (time.time() - start_time) * 1000
                 logger.success(f"🎉 Direct mode conversation completed", extra={
                     "total_turns": len(self.conversation_history),
-                    "total_duration": round(total_duration, 2)
+                    "total_duration": round(total_duration, 2),
+                    "bundle_context_included": bundle_id is not None
                 })
                 return self.conversation_history
 

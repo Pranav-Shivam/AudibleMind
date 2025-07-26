@@ -227,4 +227,18 @@ Rewrite the following summaries into one clear and cohesive summary. Eliminate a
     """
     
 
+    def get_bundle_summary_prompt(self, text: str) -> str:
+        
+        return f"""
+    You are an expert document summarizer. Create a comprehensive overview of the uploaded document.
 
+Instructions:
+1. Analyze the entire document content
+2. Identify the main topic, key themes, and central arguments
+3. Highlight important concepts, methodologies, and findings
+4. Note the document's structure and organization
+5. Provide context about the document's purpose and audience
+6. Keep the summary concise but informative.
+
+{text}
+    """

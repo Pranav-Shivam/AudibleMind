@@ -269,3 +269,9 @@ class DocumentSummarizer:
                                   summary_length=len(final_summary))
         
         return final_summary
+
+    def get_bundle_summary(self, text: str, user_prompt: str = "") -> str:
+        
+        bundle_prompt = self.prompt_manager.get_bundle_summary_prompt(text)
+        bundle_summary = self.ollama_connector.make_ollama_call(bundle_prompt, temperature=0.3, max_tokens=2000)
+        return bundle_summary
