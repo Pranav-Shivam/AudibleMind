@@ -51,7 +51,7 @@ const ChunksViewer = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isChatModalVisible, setIsChatModalVisible] = useState(false);
   const [selectedChunkForChat, setSelectedChunkForChat] = useState(null);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [isMobile, setIsMobile] = useState(false);
   const [tableHeight, setTableHeight] = useState('calc(100vh - 200px)');
 
