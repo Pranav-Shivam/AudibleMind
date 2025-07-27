@@ -194,11 +194,30 @@
   animation: waveAnimation 1.5s ease-in-out infinite;
 }
 
-.wave-bar:nth-child(1) { animation-delay: 0s; height: 8px; }
-.wave-bar:nth-child(2) { animation-delay: 0.1s; height: 16px; }
-.wave-bar:nth-child(3) { animation-delay: 0.2s; height: 20px; }
-.wave-bar:nth-child(4) { animation-delay: 0.1s; height: 16px; }
-.wave-bar:nth-child(5) { animation-delay: 0s; height: 8px; }
+.wave-bar:nth-child(1) {
+  animation-delay: 0s;
+  height: 8px;
+}
+
+.wave-bar:nth-child(2) {
+  animation-delay: 0.1s;
+  height: 16px;
+}
+
+.wave-bar:nth-child(3) {
+  animation-delay: 0.2s;
+  height: 20px;
+}
+
+.wave-bar:nth-child(4) {
+  animation-delay: 0.1s;
+  height: 16px;
+}
+
+.wave-bar:nth-child(5) {
+  animation-delay: 0s;
+  height: 8px;
+}
 
 /* Progress Section */
 .progress-section {
@@ -358,7 +377,18 @@
   justify-content: center;
   gap: 24px;
   position: relative;
-  padding: 12px 0;
+  height: 60px;
+  width: 60px;
+
+  .ant-btn {
+    width: 100%;
+    height: 100%;
+
+    .ant-btn-icon {
+      width: 100%;
+    }
+  }
+
 }
 
 .main-controls::before {
@@ -367,31 +397,31 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 160px;
-  height: 160px;
-  background: radial-gradient(circle, 
-    rgba(34, 197, 94, 0.15) 0%,
+  /* width: 160px;
+  height: 160px; */
+  /* background: radial-gradient(circle, 
+  rgba(34, 197, 94, 0.15) 0%,
     rgba(34, 197, 94, 0.1) 35%,
     transparent 70%
-  );
+  ); */
   z-index: 1;
   pointer-events: none;
   animation: glowPulse 3s ease-in-out infinite;
 }
 
+
 /* Play Button */
 .play-button {
-  width: 64px;
-  height: 64px;
+  width: 50px;
+  height: 50px;
   aspect-ratio: 1;
   font-size: 28px;
-  background: linear-gradient(135deg, 
-    rgba(52, 211, 153, 1) 0%,
-    rgba(22, 163, 74, 1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(52, 211, 153, 1) 0%,
+      rgba(22, 163, 74, 1) 100%);
   border: none;
   border-radius: 50%;
-  box-shadow: 
+  box-shadow:
     0 6px 16px rgba(34, 197, 94, 0.3),
     0 3px 8px rgba(34, 197, 94, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -413,10 +443,9 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 50%;
@@ -425,7 +454,7 @@
 
 .play-button:hover {
   transform: translateY(-4px) scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 24px rgba(34, 197, 94, 0.4),
     0 6px 12px rgba(34, 197, 94, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -437,7 +466,7 @@
 
 .play-button:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(34, 197, 94, 0.2),
     0 2px 4px rgba(34, 197, 94, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -446,11 +475,10 @@
 
 .play-button:disabled {
   background: linear-gradient(135deg,
-    rgba(148, 163, 184, 0.9) 0%,
-    rgba(100, 116, 139, 0.9) 100%
-  );
+      rgba(148, 163, 184, 0.9) 0%,
+      rgba(100, 116, 139, 0.9) 100%);
   color: rgba(255, 255, 255, 0.7);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(148, 163, 184, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   cursor: not-allowed;
@@ -460,10 +488,9 @@
 
 .play-button.playing {
   background: linear-gradient(135deg,
-    rgba(239, 68, 68, 1) 0%,
-    rgba(185, 28, 28, 1) 100%
-  );
-  box-shadow: 
+      rgba(239, 68, 68, 1) 0%,
+      rgba(185, 28, 28, 1) 100%);
+  box-shadow:
     0 6px 16px rgba(239, 68, 68, 0.3),
     0 3px 8px rgba(239, 68, 68, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -472,11 +499,10 @@
 
 .play-button.playing:hover {
   background: linear-gradient(135deg,
-    rgba(220, 38, 38, 1) 0%,
-    rgba(153, 27, 27, 1) 100%
-  );
+      rgba(220, 38, 38, 1) 0%,
+      rgba(153, 27, 27, 1) 100%);
   transform: translateY(-4px) scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 24px rgba(239, 68, 68, 0.4),
     0 6px 12px rgba(239, 68, 68, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -488,26 +514,29 @@
   display: block;
   position: relative;
   z-index: 2;
-  transform: translateX(3px); /* Slight adjustment for play icon visual centering */
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
 }
 
 .play-button.playing .anticon {
-  transform: none; /* Reset transform for pause icon */
+  transform: none;
+  /* Reset transform for pause icon */
 }
 
 /* Enhanced Animations */
 @keyframes playingPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
-    box-shadow: 
+    box-shadow:
       0 6px 16px rgba(239, 68, 68, 0.3),
       0 3px 8px rgba(239, 68, 68, 0.2),
       0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   }
+
   50% {
     transform: scale(1.05);
-    box-shadow: 
+    box-shadow:
       0 8px 20px rgba(239, 68, 68, 0.4),
       0 4px 10px rgba(239, 68, 68, 0.3),
       0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -515,10 +544,13 @@
 }
 
 @keyframes glowPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.6;
     transform: translate(-50%, -50%) scale(1);
   }
+
   50% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.1);
@@ -649,7 +681,8 @@
   padding: 5px;
   overflow-y: auto;
   background: var(--color-surface-primary);
-  color: var(--color-text-primary); /* Ensure all text in content section is readable */
+  color: var(--color-text-primary);
+  /* Ensure all text in content section is readable */
 }
 
 .audio-error {
@@ -663,13 +696,15 @@
 
 .content-text {
   padding: 0;
-  color: var(--color-text-primary); /* Ensure content text is readable */
+  color: var(--color-text-primary);
+  /* Ensure content text is readable */
 }
 
 .main-content {
   font-size: 15px !important;
   line-height: 1.6 !important;
-  color: var(--color-text-primary) !important; /* Explicit color for readability */
+  color: var(--color-text-primary) !important;
+  /* Explicit color for readability */
   margin: 0 !important;
   text-align: justify;
 }
@@ -782,10 +817,13 @@
 
 /* Animations */
 @keyframes subtlePulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.05);
     opacity: 0.8;
@@ -793,10 +831,13 @@
 }
 
 @keyframes professionalGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: var(--shadow-md);
     transform: scale(1);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
     transform: scale(1.02);
@@ -804,11 +845,14 @@
 }
 
 @keyframes waveAnimation {
-  0%, 100% {
+
+  0%,
+  100% {
     height: 8px;
     opacity: 0.7;
     transform: scaleY(1);
   }
+
   50% {
     height: 20px;
     opacity: 1;
@@ -821,6 +865,7 @@
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -833,60 +878,60 @@
     margin: 0;
     padding: 0;
   }
-  
+
   .shiruvox-card {
     margin: 8px;
     border-radius: var(--radius-lg);
   }
-  
+
   .header-section {
     padding: 16px 20px 12px;
   }
-  
+
   .content-title {
     font-size: 16px !important;
   }
-  
+
   .media-section {
     padding: 12px 20px;
   }
-  
+
   .controls-section {
     padding: 12px 20px;
     gap: 12px;
     flex-wrap: wrap;
   }
-  
+
   .content-section {
     padding: 5px;
   }
-  
+
   .interaction-section {
     padding: 12px 20px;
   }
-  
+
   .main-controls {
     gap: 8px;
   }
-  
+
   .play-button {
     width: 40px;
     height: 40px;
     font-size: 16px;
   }
-  
+
   .control-button {
     width: 32px;
     height: 32px;
     font-size: 12px;
   }
-  
+
   .generate-audio-button {
     padding: 6px 12px;
     font-size: 12px;
     min-width: 120px;
   }
-  
+
   .audio-status {
     min-width: 150px;
   }
@@ -897,62 +942,62 @@
     margin: 4px;
     border-radius: var(--radius-md);
   }
-  
+
   .header-section {
     padding: 12px 16px 8px;
   }
-  
+
   .media-section {
     padding: 8px 16px;
   }
-  
+
   .controls-section {
     padding: 8px 16px;
     gap: 8px;
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .content-section {
     padding: 5px;
   }
-  
+
   .interaction-section {
     padding: 8px 16px;
   }
-  
+
   .main-controls {
     gap: 6px;
     justify-content: center;
   }
-  
+
   .play-button {
     width: 36px;
     height: 36px;
     font-size: 14px;
   }
-  
+
   .control-button {
     width: 28px;
     height: 28px;
     font-size: 10px;
   }
-  
+
   .generate-audio-button {
     padding: 4px 8px;
     font-size: 11px;
     min-width: 100px;
   }
-  
+
   .engagement-buttons {
     gap: 6px;
   }
-  
+
   .interaction-button {
     padding: 4px 6px;
     font-size: 11px;
   }
-  
+
   .audio-status {
     min-width: auto;
     justify-content: center;

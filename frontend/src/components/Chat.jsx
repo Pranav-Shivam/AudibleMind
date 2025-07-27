@@ -1,14 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, LoadingSpinner, ToastNotification, Input } from './shared';
 import { CloseOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
 import '../styles/Chat.css';
+import { Button, Input, ToastNotification } from './shared';
 
-// Icons as components for better maintainability
-const ChatIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
 
 const ExportIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -273,7 +267,7 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
           <div className="chat-modal-content">
             <div className="chat-modal-header">
               <h2>
-                <ChatIcon /> Enhance Content with AI
+                Enhance Content with AI
               </h2>
               <Button
                 onClick={onClose}
@@ -281,7 +275,9 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
                 icon={<CloseOutlined />}
                 aria-label="Close modal"
                 className="close-button"
-              />
+              >
+                <CloseOutlined />
+              </Button>
             </div>
             
             <form onSubmit={handleSubmit} autoComplete="off" className="chat-form">
@@ -553,12 +549,10 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
                 >
                   {isLoading ? (
                     <>
-                      <LoadingSpinner size="small" />
                       Generating Conversation...
                     </>
                   ) : (
                     <>
-                      <ChatIcon />
                       Generate Conversation
                     </>
                   )}

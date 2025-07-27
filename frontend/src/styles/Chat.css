@@ -77,21 +77,10 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  transition: var(--chat-transition);
-  color: var(--color-text-secondary) !important;
   background: transparent;
   border: none;
 }
 
-.close-button:hover {
-  background-color: var(--color-surface-secondary) !important;
-  color: var(--color-text-primary) !important;
-}
-
-.close-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-light) !important;
-}
 
 .close-button .anticon {
   font-size: 16px;
