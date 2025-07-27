@@ -99,6 +99,51 @@
   --transition-slow: 300ms ease-out;
 }
 
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Text Colors - Dark Mode */
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    
+    /* Surface Colors - Dark Mode */
+    --color-surface-primary: #111827;
+    --color-surface-secondary: #1f2937;
+    --color-surface-elevated: #374151;
+    
+    /* Border Colors - Dark Mode */
+    --color-border-subtle: #374151;
+    --color-border: #4b5563;
+    
+    /* Background Colors - Dark Mode */
+    --color-bg-primary: #111827;
+    --color-bg-secondary: #1f2937;
+    
+    /* Success Colors - Dark Mode */
+    --color-success-light: #064e3b;
+    --color-success-dark: #4ade80;
+    
+    /* Warning Colors - Dark Mode */
+    --color-warning-light: #451a03;
+    --color-warning-dark: #fbbf24;
+    
+    /* Error Colors - Dark Mode */
+    --color-error-light: #450a0a;
+    --color-error-dark: #f87171;
+    
+    /* Primary Subtle - Dark Mode */
+    --color-primary-subtle: #1e1b4b;
+    
+    /* Shadows - Dark Mode */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+  }
+}
+
 /* Base Styles Reset & Enhancement */
 * {
   box-sizing: border-box;
@@ -173,6 +218,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.025em;
+  color: var(--color-text-primary);
 }
 
 h1 {
@@ -210,6 +256,27 @@ a:hover {
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-primary);
+  border: 2px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 0.7;
+}
+
+select option {
+  background-color: var(--color-surface-primary);
+  color: var(--color-text-primary);
 }
 
 button {
@@ -266,7 +333,7 @@ img {
 }
 
 .btn-secondary {
-  background: white;
+  background: var(--color-surface-primary);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
 }
@@ -278,7 +345,7 @@ img {
 }
 
 .card {
-  background: white;
+  background: var(--color-surface-primary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-subtle);
   box-shadow: var(--shadow-md);
@@ -396,14 +463,6 @@ img {
   }
 }
 
-/* Dark Mode Support (when implemented) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-primary: #111827;
-    --color-text-primary: #f9fafb;
-  }
-}
-
 /* Responsive Typography */
 @media (max-width: 640px) {
   html {
@@ -474,7 +533,7 @@ img {
 }
 
 .error-boundary .error-content {
-  background: white;
+  background: var(--color-surface-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   padding: var(--spacing-8);
@@ -503,6 +562,17 @@ img {
   align-items: center;
   justify-content: center;
   z-index: 50;
+}
+
+/* Dark mode loading overlay adjustments */
+@media (prefers-color-scheme: dark) {
+  .loading-overlay {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .loading-fullscreen {
+    background: rgba(0, 0, 0, 0.9);
+  }
 }
 
 /* ===== CHUNKS PAGE STYLES ===== */

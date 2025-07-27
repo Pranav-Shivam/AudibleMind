@@ -14,29 +14,28 @@ import {
   Slider,
   App
 } from 'antd';
+import {
+  PlayCircleFilled,
+  PauseCircleFilled,
+  SoundFilled,
+  AudioMutedOutlined,
+  HeartOutlined,
+  HeartFilled,
+  DislikeOutlined,
+  DislikeFilled,
+  ShareAltOutlined,
+  BookOutlined,
+  BookFilled,
+  StepBackwardOutlined,
+  StepForwardOutlined,
+  AudioOutlined,
+  MoreOutlined,
+  RobotOutlined
+} from '@ant-design/icons';
 import shiruvoxImage from '../assets/shiruvox.png';
 // import shiruvox from '../assets/shiruvox.json';
 import { useParams } from 'react-router-dom';
 import { documentApi, audioApi } from '../services/api';
-import {
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  AudioOutlined,
-  AudioMutedOutlined,
-  LikeOutlined,
-  DislikeOutlined,
-  ShareAltOutlined,
-  BookOutlined,
-  MoreOutlined,
-  FastBackwardOutlined,
-  FastForwardOutlined,
-  SoundOutlined,
-  LikeFilled,
-  DislikeFilled,
-  BookFilled,
-  HeartOutlined,
-  HeartFilled
-} from '@ant-design/icons';
 import '../styles/ContentViewer.css';
 
 const { Title, Paragraph, Text } = Typography;
@@ -402,7 +401,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
       setIsPlaying(false);
       message.info({
         content: 'Paused',
-        icon: <PauseCircleOutlined />,
+        icon: <PauseCircleFilled />,
         className: 'custom-message'
       });
     } else {
@@ -463,7 +462,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
           setIsPlaying(true);
           message.success({
             content: 'Playing audio',
-            icon: <PlayCircleOutlined />,
+            icon: <PlayCircleFilled />,
             className: 'custom-message'
           });
         }
@@ -492,7 +491,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
     }
     message.info({
       content: isMuted ? 'Unmuted' : 'Muted',
-      icon: isMuted ? <SoundOutlined /> : <AudioMutedOutlined />,
+      icon: isMuted ? <AudioMutedOutlined /> : <SoundFilled />,
     });
   };
 
@@ -550,6 +549,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
                 src={shiruvoxImage} 
                 size={56} 
                 className={`brand-avatar ${pulseAnimation ? 'pulse' : ''}`}
+                icon={<RobotOutlined />} // Fallback icon
               />
               <div className="brand-indicator"></div>
             </div>
@@ -559,7 +559,9 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
                 {chunk.heading || 'ShiruVox Content'}
               </Title>
               <div className="content-meta">
-                <Text className="author-text">by ShiruVox</Text>
+                <Text className="author-text">
+                  <RobotOutlined /> ShiruVox AI
+                </Text>
                 <span className="meta-separator">•</span>
                 <Text className="word-count">{chunk.number_of_words || 0} words</Text>
                 <span className="meta-separator">•</span>
@@ -567,11 +569,13 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
               </div>
             </div>
             
-            <Button 
-              type="text" 
-              icon={<MoreOutlined />} 
-              className="more-button"
-            />
+            <Tooltip title="More options">
+              <Button 
+                type="text" 
+                icon={<MoreOutlined />} 
+                className="more-button"
+              />
+            </Tooltip>
           </div>
         </div>
 
@@ -620,7 +624,9 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
           <div className="audio-status">
             {audioLoading && (
               <div className="status-item loading">
-                <Text type="secondary">🔄 Generating audio...</Text>
+                <Text type="secondary">
+                  <SoundFilled spin /> Generating audio...
+                </Text>
               </div>
             )}
             {audioError && (
@@ -638,12 +644,16 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
             )}
             {audioGenerated && !isPlaying && !audioLoading && (
               <div className="status-item ready">
-                <Text type="success">✅ Audio ready to play</Text>
+                <Text type="success">
+                  <AudioOutlined /> Audio ready
+                </Text>
               </div>
             )}
             {isPlaying && (
               <div className="status-item playing">
-                <Text type="success">🎵 Playing audio</Text>
+                <Text type="success">
+                  <SoundFilled spin /> Playing audio
+                </Text>
               </div>
             )}
             {!audioGenerated && !audioLoading && !audioError && (
@@ -669,15 +679,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
           </div>
 
           <div className="main-controls">
-            <Tooltip title="Previous" placement="top">
-              <Button
-                type="text"
-                icon={<FastBackwardOutlined />}
-                className="control-button secondary"
-                disabled={!audioGenerated}
-              />
-            </Tooltip>
-            
+                        
             <Tooltip title={
               !audioGenerated ? 'Generate audio first' :
               isPlaying ? 'Pause' : 'Play'
@@ -685,21 +687,13 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
               <Button
                 type="primary"
                 shape="circle"
-                icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                icon={isPlaying ? <PauseCircleFilled /> : <PlayCircleFilled />}
                 onClick={handlePlayPause}
                 disabled={!audioGenerated}
                 className={`play-button ${isPlaying ? 'playing' : ''} ${audioGenerated ? 'ready' : ''}`}
               />
             </Tooltip>
             
-            <Tooltip title="Next" placement="top">
-              <Button
-                type="text"
-                icon={<FastForwardOutlined />}
-                className="control-button secondary"
-                disabled={!audioGenerated}
-              />
-            </Tooltip>
           </div>
 
           <div className="audio-controls">
@@ -707,7 +701,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
               <Tooltip title={isMuted ? 'Unmute' : 'Mute'} placement="top">
                 <Button
                   type="text"
-                  icon={isMuted ? <AudioMutedOutlined /> : <SoundOutlined />}
+                  icon={isMuted ? <AudioMutedOutlined /> : <SoundFilled />}
                   onClick={handleMute}
                   className="control-button"
                   disabled={!audioGenerated}

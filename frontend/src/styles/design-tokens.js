@@ -93,6 +93,19 @@ export const designTokens = {
     }
   },
 
+  // Gradients
+  gradients: {
+    primary: 'linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%)',
+    secondary: 'linear-gradient(135deg, var(--color-secondary-500) 0%, var(--color-secondary-600) 100%)',
+    success: 'linear-gradient(135deg, var(--color-success-400) 0%, var(--color-success-500) 100%)',
+    error: 'linear-gradient(135deg, var(--color-error-400) 0%, var(--color-error-500) 100%)',
+    warning: 'linear-gradient(135deg, var(--color-warning-400) 0%, var(--color-warning-500) 100%)',
+    glass: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+    surface: 'linear-gradient(135deg, var(--color-primary-50) 0%, white 50%, var(--color-secondary-50) 100%)',
+    shimmer: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+    glow: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%)'
+  },
+
   // Typography Scale
   typography: {
     fontFamily: {
@@ -191,7 +204,7 @@ export const designTokens = {
     full: '9999px'
   },
 
-  // Shadow Scale
+  // Enhanced Shadows
   boxShadow: {
     xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
@@ -201,10 +214,12 @@ export const designTokens = {
     xl: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+    glow: '0 0 15px rgba(99, 102, 241, 0.3)',
+    'glow-lg': '0 0 30px rgba(99, 102, 241, 0.4)',
     none: '0 0 #0000'
   },
 
-  // Animation & Transitions
+  // Enhanced Animation & Transitions
   animation: {
     duration: {
       75: '75ms',
@@ -221,7 +236,42 @@ export const designTokens = {
       linear: 'linear',
       in: 'cubic-bezier(0.4, 0, 1, 1)',
       out: 'cubic-bezier(0, 0, 0.2, 1)',
-      'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)'
+      'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+    },
+
+    keyframes: {
+      fadeIn: {
+        from: { opacity: 0 },
+        to: { opacity: 1 }
+      },
+      slideUp: {
+        from: { transform: 'translateY(10px)', opacity: 0 },
+        to: { transform: 'translateY(0)', opacity: 1 }
+      },
+      pulse: {
+        '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+        '50%': { transform: 'scale(1.05)', opacity: 0.8 }
+      },
+      shimmer: {
+        '0%': { transform: 'translateX(-100%)' },
+        '100%': { transform: 'translateX(100%)' }
+      },
+      wave: {
+        '0%, 100%': { transform: 'scaleY(1)', opacity: 0.7 },
+        '50%': { transform: 'scaleY(1.2)', opacity: 1 }
+      },
+      glow: {
+        '0%, 100%': { 
+          boxShadow: '0 0 10px rgba(99, 102, 241, 0.2)',
+          transform: 'scale(1)'
+        },
+        '50%': { 
+          boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)',
+          transform: 'scale(1.02)'
+        }
+      }
     }
   },
 

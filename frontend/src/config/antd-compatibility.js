@@ -1,9 +1,12 @@
 // Ant Design React 19 Compatibility Configuration
 // This file contains settings to resolve compatibility warnings between Ant Design v5 and React 19
 
+import { theme } from 'antd';
+
 export const antdCompatibilityConfig = {
-  // Theme configuration for React 19 compatibility
+  // Theme configuration for React 19 compatibility with dark mode support
   theme: {
+    algorithm: theme.defaultAlgorithm, // This will automatically switch to dark algorithm based on system preferences
     token: {
       // Custom theme tokens that work well with React 19
       borderRadius: 6,

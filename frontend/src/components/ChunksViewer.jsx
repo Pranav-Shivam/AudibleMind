@@ -27,7 +27,14 @@ import {
   BookOutlined,
   ClockCircleOutlined,
   FileTextOutlined,
-  StarFilled
+  StarFilled,
+  EyeOutlined,
+  MessageOutlined,
+  BarChartOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
 import ShiruVoxChunk from "./ContentViewer";
 import "../styles/ChunkViewer.css";
@@ -45,9 +52,69 @@ const ChunksViewer = () => {
   const [isChatModalVisible, setIsChatModalVisible] = useState(false);
   const [selectedChunkForChat, setSelectedChunkForChat] = useState(null);
   const [pageSize, setPageSize] = useState(5);
+  const [isMobile, setIsMobile] = useState(false);
+  const [tableHeight, setTableHeight] = useState('calc(100vh - 200px)');
 
   // Global audio manager
   const [globalAudioElements, setGlobalAudioElements] = useState(new Set());
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 640;
+      setIsMobile(mobile);
+      
+      // Calculate dynamic table height based on screen size
+      const headerHeight = 56; // Header height
+      const padding = mobile ? 16 : 24; // Main padding
+      const toolbarHeight = mobile ? 60 : 80; // Toolbar height
+      const paginationHeight = mobile ? 60 : 70; // Increased pagination height to ensure visibility
+      const cardPadding = mobile ? 24 : 32; // Card padding
+      
+      const totalOffset = headerHeight + (padding * 2) + toolbarHeight + paginationHeight + (cardPadding * 2);
+      setTableHeight(`calc(100vh - ${totalOffset}px)`);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkScreenSize);
+
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+      document.body.style.margin = '';
+      document.body.style.padding = '';
+    };
+  }, []);
+
+  // Recalculate table height when page size changes
+  useEffect(() => {
+    const mobile = isMobile;
+    const headerHeight = 56;
+    const padding = mobile ? 16 : 24;
+    const toolbarHeight = mobile ? 60 : 80;
+    const paginationHeight = mobile ? 60 : 70;
+    const cardPadding = mobile ? 24 : 32;
+    
+    const totalOffset = headerHeight + (padding * 2) + toolbarHeight + paginationHeight + (cardPadding * 2);
+    
+    // Add a small delay to ensure pagination is properly rendered
+    const timer = setTimeout(() => {
+      setTableHeight(`calc(100vh - ${totalOffset}px)`);
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [pageSize, isMobile]);
 
   // Function to stop all registered audio elements
   const stopAllGlobalAudio = () => {
@@ -235,23 +302,46 @@ const ChunksViewer = () => {
     {
       title: "Content",
       dataIndex: "heading",
-      width: 300,
+      width: isMobile ? 200 : 300,
       render: (text, record) => (
-        <div className="content-cell">
-          <div className="content-header">
-            <Avatar 
-              size={40} 
-              icon={<BookOutlined />} 
-              className="content-avatar"
-            />
-            <div className="content-info">
-              <div className="content-title">
-                {text || "Untitled Content"}
-              </div>
-              <Text type="secondary" className="content-preview">
-                {record.content ? record.content.substring(0, 60) + "..." : "No preview available"}
-              </Text>
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 'var(--spacing-2)',
+          padding: 'var(--spacing-1) 0'
+        }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: 'var(--gradient-primary)',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <BookOutlined style={{ color: 'white', fontSize: '14px' }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-text-primary)',
+              marginBottom: 'var(--spacing-1)',
+              lineHeight: 1.3
+            }}>
+              {text || "Untitled Content"}
             </div>
+            <Text type="secondary" style={{
+              fontSize: 'var(--text-xs)',
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}>
+              {record.content ? record.content.substring(0, 80) + "..." : "No preview available"}
+            </Text>
           </div>
         </div>
       ),
@@ -259,40 +349,64 @@ const ChunksViewer = () => {
     {
       title: "Status",
       dataIndex: "is_user_liked",
-      width: 120,
+      width: isMobile ? 80 : 120,
       align: "center",
       render: (liked) => (
-        <div className="status-cell">
-          <span className="status-text">
-            {liked ? <HeartFilled className="heart-icon liked" /> : <HeartOutlined className="heart-icon" />}
-            {liked ? "Liked" : "Not Liked"}
-          </span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 'var(--spacing-1)',
+          padding: 'var(--spacing-1) var(--spacing-2)',
+          borderRadius: 'var(--radius-full)',
+          backgroundColor: liked ? 'var(--color-success-light)' : 'var(--color-surface-secondary)',
+          color: liked ? 'var(--color-success)' : 'var(--color-text-secondary)',
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--font-weight-medium)'
+        }}>
+          {liked ? <HeartFilled style={{ color: 'var(--color-success)' }} /> : <HeartOutlined />}
+          {liked ? "Liked" : "Not Liked"}
         </div>
       ),
     },
     {
       title: "Timeline",
       dataIndex: "created_at",
-      width: 160,
+      width: isMobile ? 100 : 160,
       align: "center",
       render: (createdAt, record) => {
         const createdDate = createdAt ? new Date(createdAt) : new Date();
         const updatedDate = record.updated_at ? new Date(record.updated_at) : new Date();
         
         return (
-          <div className="timeline-cell">
-            <div className="timeline-item">
-              <ClockCircleOutlined className="timeline-icon created" />
-              <Text className="timeline-text">
-                Created: {createdDate.toLocaleDateString()}
-              </Text>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--spacing-1)',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-1)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-secondary)'
+            }}>
+              <CalendarOutlined style={{ color: 'var(--color-primary)' }} />
+              <span>{createdDate.toLocaleDateString()}</span>
             </div>
-            <div className="timeline-item">
-              <ClockCircleOutlined className="timeline-icon updated" />
-              <Text className="timeline-text">
-                Updated: {updatedDate.toLocaleDateString()}
-              </Text>
-            </div>
+            {!isMobile && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-1)',
+                fontSize: 'var(--text-xs)',
+                color: 'var(--color-text-tertiary)'
+              }}>
+                <ClockCircleOutlined style={{ color: 'var(--color-text-tertiary)' }} />
+                <span>Updated: {updatedDate.toLocaleDateString()}</span>
+              </div>
+            )}
           </div>
         );
       },
@@ -301,15 +415,36 @@ const ChunksViewer = () => {
     {
       title: "Metrics",
       dataIndex: "number_of_words",
-      width: 120,
+      width: isMobile ? 80 : 120,
       align: "center",
       sorter: (a, b) => (a.number_of_words || 0) - (b.number_of_words || 0),
       render: (words) => (
-        <div className="metrics-cell">
-          <div className="metric-item">
-            <FileTextOutlined className="metric-icon" />
-            <Text strong className="metric-value">{words || 0}</Text>
-            <Text type="secondary" className="metric-label">words</Text>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          padding: 'var(--spacing-1) var(--spacing-2)',
+          borderRadius: 'var(--radius-md)',
+          backgroundColor: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-subtle)'
+        }}>
+          <BarChartOutlined style={{ 
+            color: 'var(--color-primary)', 
+            fontSize: '14px' 
+          }} />
+          <div style={{
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-weight-bold)',
+            color: 'var(--color-text-primary)'
+          }}>
+            {words || 0}
+          </div>
+          <div style={{
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-text-secondary)'
+          }}>
+            words
           </div>
         </div>
       ),
@@ -317,15 +452,33 @@ const ChunksViewer = () => {
     {
       title: "Actions",
       key: "actions",
-      width: 220,
+      width: isMobile ? 120 : 220,
       align: "center",
       render: (_, record) => (
-        <Space size="small" className="actions-cell">
+        <Space size={isMobile ? "small" : "small"} style={{ justifyContent: 'center' }}>
           <Tooltip title="Copy Content" placement="top">
             <Button
               type="text"
-              size="small"
-              className="action-button copy-btn"
+              size={isMobile ? "small" : "small"}
+              style={{
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-secondary)',
+                transition: 'all var(--transition-normal)',
+                width: isMobile ? '24px' : 'auto',
+                height: isMobile ? '24px' : 'auto',
+                padding: isMobile ? '0' : 'var(--spacing-1) var(--spacing-2)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.color = 'var(--color-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               onClick={() => {
                 navigator.clipboard?.writeText(record.content || "");
                 message.success('Content copied to clipboard');
@@ -334,25 +487,59 @@ const ChunksViewer = () => {
             />
           </Tooltip>
 
-          <Tooltip title="Play Content" placement="top">
+          <Tooltip title="View & Play Content" placement="top">
             <Button
               type="text"
-              size="small"
-              className="action-button play-btn"
+              size={isMobile ? "small" : "small"}
+              style={{
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-secondary)',
+                transition: 'all var(--transition-normal)',
+                width: isMobile ? '24px' : 'auto',
+                height: isMobile ? '24px' : 'auto',
+                padding: isMobile ? '0' : 'var(--spacing-1) var(--spacing-2)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.color = 'var(--color-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               onClick={() => handleViewChunk(record)}
-              icon={<PlayCircleOutlined />}
+              icon={<EyeOutlined />}
             />
           </Tooltip>
-
-
 
           <Tooltip title="Enhance with AI" placement="top">
             <Button
               type="text"
-              size="small"
-              className="action-button enhance-btn"
+              size={isMobile ? "small" : "small"}
+              style={{
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-secondary)',
+                transition: 'all var(--transition-normal)',
+                width: isMobile ? '24px' : 'auto',
+                height: isMobile ? '24px' : 'auto',
+                padding: isMobile ? '0' : 'var(--spacing-1) var(--spacing-2)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.color = 'var(--color-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               onClick={() => handleEnhanceWithAI(record)}
-              icon={<ThunderboltOutlined />}
+              icon={<MessageOutlined />}
             />
           </Tooltip>
         </Space>
@@ -361,142 +548,401 @@ const ChunksViewer = () => {
     {
       title: "Activity",
       key: "remarks",
-      width: 130,
+      width: isMobile ? 80 : 130,
       align: "center",
       render: (_, record) => {
         const actions = [
-          { name: "Played", color: "blue", icon: <PlayCircleOutlined /> },
-          { name: "Enhanced", color: "purple", icon: <ThunderboltOutlined /> }
+          { name: "Viewed", color: "blue", icon: <EyeOutlined /> },
+          { name: "Enhanced", color: "purple", icon: <MessageOutlined /> },
+          { name: "Copied", color: "green", icon: <CopyOutlined /> }
         ];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
 
         return (
-          <div className="activity-scroll-container">
-            <Tag 
-              color={randomAction.color} 
-              icon={randomAction.icon}
-              className="activity-tag"
-            >
-              {randomAction.name}
-            </Tag>
-          </div>
+          <Tag 
+            color={randomAction.color} 
+            icon={randomAction.icon}
+            style={{
+              borderRadius: 'var(--radius-full)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 'var(--font-weight-medium)',
+              border: 'none',
+              padding: 'var(--spacing-1) var(--spacing-2)'
+            }}
+          >
+            {randomAction.name}
+          </Tag>
         );
       },
     },
   ];
 
   return (
-    <div className="chunk-viewer-container">
-      <div className="enhanced-header">
-        <div className="header-content">
-          <div className="header-title">
-            <div className="header-icon">
-              <StarFilled />
+    <div style={{
+      height: '100vh',
+      background: 'linear-gradient(135deg, var(--color-primary-subtle) 0%, var(--color-surface-primary) 50%, var(--color-surface-secondary) 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
+      <header style={{
+        flexShrink: 0,
+        backgroundColor: 'var(--color-surface-primary)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid var(--color-border-subtle)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        <div style={{
+          maxWidth: '80rem',
+          margin: '0 auto',
+          padding: '0 var(--spacing-4)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '56px',
+            flexWrap: 'wrap',
+            gap: 'var(--spacing-2)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-3)',
+              flexShrink: 0
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                background: 'var(--gradient-primary)',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <span style={{
+                  color: 'white',
+                  fontSize: 'var(--text-lg)',
+                  fontWeight: 'var(--font-weight-bold)'
+                }}>📄</span>
+              </div>
+              <div>
+                <h1 style={{
+                  fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
+                  fontWeight: 'var(--font-weight-bold)',
+                  color: 'var(--color-text-primary)',
+                  margin: 0
+                }}>ShiruVox Content Studio</h1>
+                <p style={{
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--color-text-secondary)',
+                  margin: 0,
+                  display: isMobile ? 'none' : 'block'
+                }}>Manage and enhance your content with AI-powered tools</p>
+              </div>
             </div>
-            <div className="header-text">
-              <Title level={1}>ShiruVox Content Studio</Title>
-              <Text type="secondary">Manage and enhance your content with AI-powered tools</Text>
-            </div>
-          </div>
-          <div className="header-stats">
-            <div className="stat-item">
-              <Text className="stat-value">{chunks.length}</Text>
-              <Text className="stat-label">Total Items</Text>
-            </div>
-            <Divider type="vertical" style={{ height: '40px' }} />
-            <div className="stat-item">
-              <Text className="stat-value">{chunks.filter(item => item.is_user_liked).length}</Text>
-              <Text className="stat-label">Liked</Text>
-            </div>
-            <Divider type="vertical" style={{ height: '40px' }} />
-            <div className="stat-item">
-              <Text className="stat-value">
-                {chunks.length > 0 ? Math.round(chunks.reduce((sum, item) => sum + (item.number_of_words || 0), 0) / chunks.length) : 0}
-              </Text>
-              <Text className="stat-label">Avg Words</Text>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? 'var(--spacing-2)' : 'var(--spacing-4)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-2)',
+                  padding: 'var(--spacing-1) var(--spacing-3)',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-surface-secondary)',
+                  border: '1px solid var(--color-border-subtle)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)'
+                }}>
+                  <BarChartOutlined style={{ color: 'var(--color-primary)' }} />
+                  <span style={{
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--color-text-primary)'
+                  }}>{chunks.length}</span>
+                  <span style={{
+                    color: 'var(--color-text-secondary)',
+                    display: isMobile ? 'none' : 'inline'
+                  }}>Items</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-2)',
+                  padding: 'var(--spacing-1) var(--spacing-3)',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-success-light)',
+                  border: '1px solid var(--color-success)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)'
+                }}>
+                  <HeartFilled style={{ color: 'var(--color-success)' }} />
+                  <span style={{
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--color-success)'
+                  }}>{chunks.filter(item => item.is_user_liked).length}</span>
+                  <span style={{
+                    color: 'var(--color-success)',
+                    display: isMobile ? 'none' : 'inline'
+                  }}>Liked</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <Card className="enhanced-table">
-        <ProTable
-          rowKey="id"
-          columns={columns}
-          dataSource={chunks}
-          loading={loading}
-          search={false}
-          scroll={{ 
-            x: 1200,
-            y: 'calc(100vh - 400px)'
-          }}
-          pagination={{
-            pageSize: pageSize,
-            showQuickJumper: true,
-            showSizeChanger: true,
-            pageSizeOptions: ['5', '10', '20', '50', '100'],
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-            position: ['bottomCenter'],
-            onChange: (page, pageSize) => {
-              setPageSize(pageSize);
-            },
-          }}
-          toolBarRender={() => [
-            <Button
-              key="new"
-              icon={<PlusOutlined />}
-              type="primary"
-              className="toolbar-button primary"
-              onClick={() => {
-                // Add new chunk functionality placeholder
-              }}
-            >
-              Create New
-            </Button>,
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              className="toolbar-button"
-              onClick={handleRefresh}
-              loading={loading}
-            >
-              Refresh
-            </Button>,
-            <Button 
-              key="filter" 
-              icon={<FilterOutlined />} 
-              className="toolbar-button"
-            >
-              Filters
-            </Button>,
-            <Button 
-              key="settings" 
-              icon={<SettingOutlined />} 
-              className="toolbar-button"
-            >
-              Settings
-            </Button>,
-          ]}
-          headerTitle={null}
-          cardBordered={false}
-          options={{
-            reload: false,
-            density: true,
-            fullScreen: true,
-          }}
-          rowClassName={(record, index) => 
-            index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
-          }
-        />
-      </Card>
+      {/* Main Content */}
+      <main style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '90%',
+        margin: '0 auto',
+        padding: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
+        width: '100%',
+        minHeight: 0,
+        overflow: 'hidden'
+      }}>
+
+        {/* Table Card */}
+        <Card style={{
+          flex: 1,
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--color-border-subtle)',
+          backgroundColor: 'var(--color-surface-primary)',
+          animation: 'slideUp 0.6s ease-out',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
+          <ProTable
+            rowKey="id"
+            columns={columns}
+            dataSource={chunks}
+            loading={loading}
+            search={false}
+            scroll={{ 
+              x: isMobile ? 800 : 1200,
+              y: tableHeight
+            }}
+            pagination={{
+              pageSize: pageSize,
+              showQuickJumper: !isMobile,
+              showSizeChanger: true,
+              pageSizeOptions: ['5', '10', '20', '50', '100'],
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+              position: ['bottomCenter'],
+              onChange: (page, pageSize) => {
+                setPageSize(pageSize);
+              },
+              style: {
+                marginTop: 'var(--spacing-2)',
+                padding: 'var(--spacing-2) 0',
+                flexShrink: 0,
+                position: 'sticky',
+                bottom: 0,
+                backgroundColor: 'var(--color-surface-primary)',
+                borderTop: '1px solid var(--color-border-subtle)',
+                zIndex: 1
+              },
+              size: isMobile ? 'small' : 'default'
+            }}
+            toolBarRender={() => [
+              <Button
+                key="new"
+                icon={<PlusOutlined />}
+                type="primary"
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  background: 'var(--gradient-primary)',
+                  border: 'none',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all var(--transition-normal)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
+                  padding: isMobile ? 'var(--spacing-1) var(--spacing-2)' : 'var(--spacing-2) var(--spacing-4)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                }}
+                onClick={() => {
+                  // Add new chunk functionality placeholder
+                }}
+              >
+                {isMobile ? 'New' : 'Create New'}
+              </Button>,
+              <Button
+                key="refresh"
+                icon={<ReloadOutlined />}
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border-subtle)',
+                  color: 'var(--color-text-secondary)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  transition: 'all var(--transition-normal)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
+                  padding: isMobile ? 'var(--spacing-1) var(--spacing-2)' : 'var(--spacing-2) var(--spacing-4)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)';
+                  e.currentTarget.style.color = 'var(--color-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+                onClick={handleRefresh}
+                loading={loading}
+              >
+                {isMobile ? 'Refresh' : 'Refresh'}
+              </Button>,
+              <Button 
+                key="filter" 
+                icon={<FilterOutlined />} 
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border-subtle)',
+                  color: 'var(--color-text-secondary)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  transition: 'all var(--transition-normal)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
+                  padding: isMobile ? 'var(--spacing-1) var(--spacing-2)' : 'var(--spacing-2) var(--spacing-4)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)';
+                  e.currentTarget.style.color = 'var(--color-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {isMobile ? 'Filter' : 'Filters'}
+              </Button>,
+              <Button 
+                key="settings" 
+                icon={<SettingOutlined />} 
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border-subtle)',
+                  color: 'var(--color-text-secondary)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  transition: 'all var(--transition-normal)',
+                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
+                  padding: isMobile ? 'var(--spacing-1) var(--spacing-2)' : 'var(--spacing-2) var(--spacing-4)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)';
+                  e.currentTarget.style.color = 'var(--color-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-subtle)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {isMobile ? 'Settings' : 'Settings'}
+              </Button>,
+            ]}
+            headerTitle={null}
+            cardBordered={false}
+            options={{
+              reload: false,
+              density: true,
+              fullScreen: true,
+            }}
+            rowClassName={(record, index) => 
+              index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
+            }
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              overflow: 'hidden'
+            }}
+          />
+        </Card>
+      </main>
 
       {/* Enhanced Modal */}
       {isModalVisible && selectedChunk && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 'var(--spacing-4)',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            backgroundColor: 'var(--color-surface-primary)',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow-2xl)',
+            overflow: 'hidden',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
             <Button
-              className="modal-close"
               onClick={handleCloseModal}
+              style={{
+                position: 'absolute',
+                top: 'var(--spacing-3)',
+                right: 'var(--spacing-3)',
+                zIndex: 10,
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--color-border-subtle)',
+                backgroundColor: 'var(--color-surface-primary)',
+                color: 'var(--color-text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all var(--transition-normal)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error-light)';
+                e.currentTarget.style.color = 'var(--color-error)';
+                e.currentTarget.style.borderColor = 'var(--color-error)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface-primary)';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
+              }}
             >
               ✕
             </Button>
