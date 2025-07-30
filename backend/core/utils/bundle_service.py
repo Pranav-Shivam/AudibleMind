@@ -4,8 +4,8 @@ from core.configuration import *
 from core.logger import logger
 
 class BundleService:
-    def __init__(self):
-        self.document_summary = DocumentSummarizer()
+    def __init__(self, llm_client=None):
+        self.document_summary = DocumentSummarizer(llm_client)
         self.couch_client = CouchDBConnection()
     
     def create_bundle(self, chunks):

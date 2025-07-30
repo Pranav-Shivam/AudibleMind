@@ -20,12 +20,12 @@ class TechnicalParagraphRequest(BaseModel):
     api_key: Optional[str] = Field(default=None, description="OpenAI API key (optional if set in environment)")
     model: Optional[str] = Field(default="gpt-4o", description="OpenAI model to use")
     local_model: Optional[str] = Field(default="llama3:8b-instruct-q4_K_M", description="Local Ollama model to use")
-    include_shivam: Optional[bool] = Field(default=True, description="Include Shivam (beginner learner) in the conversation")
-    include_prem: Optional[bool] = Field(default=True, description="Include Prem (advanced learner) in the conversation")
-    shivam_description: Optional[str] = Field(default=None, description="Custom description for Shivam's persona")
-    prem_description: Optional[str] = Field(default=None, description="Custom description for Prem's persona")
-    shivam_questions: Optional[List[str]] = Field(default=None, description="List of questions from Shivam (optional)")
-    prem_questions: Optional[List[str]] = Field(default=None, description="List of questions from Prem (optional)")
+    include_lucas: Optional[bool] = Field(default=True, description="Include Lucas (beginner learner) in the conversation")
+    include_marcus: Optional[bool] = Field(default=True, description="Include Marcus (advanced learner) in the conversation")
+    lucas_description: Optional[str] = Field(default=None, description="Custom description for Lucas's persona")
+    marcus_description: Optional[str] = Field(default=None, description="Custom description for Marcus's persona")
+    lucas_questions: Optional[List[str]] = Field(default=None, description="List of questions from Lucas (optional)")
+    marcus_questions: Optional[List[str]] = Field(default=None, description="List of questions from Marcus (optional)")
     num_questions_per_learner: Optional[int] = Field(default=None, description="Number of questions per learner (overrides max_turns_per_learner)")
     bundle_id: Optional[str] = Field(default=None, description="Bundle ID for additional context")
     bundle_index: Optional[int] = Field(default=None, description="Bundle index for additional context")
@@ -127,10 +127,10 @@ async def generate_conversation(
     
     This endpoint creates a multi-persona conversation involving:
     - Pranav: Expert explainer who provides layered explanations
-    - Shivam: Beginner learner asking basic questions (optional)
-    - Prem: Advanced learner asking deep technical questions (optional)
+    - Lucas: Beginner learner asking basic questions (optional)
+    - Marcus: Advanced learner asking deep technical questions (optional)
     
-    Users can choose to include either Shivam, Prem, or both learners,
+    Users can choose to include either Lucas, Marcus, or both learners,
     provide custom descriptions for their personas, and specify their own questions.
     If no questions are provided, Pranav will generate appropriate questions based on each persona.
     """
@@ -142,22 +142,22 @@ async def generate_conversation(
         "paragraph_length": len(request.paragraph),
         "llm_provider": request.llm_provider,
         "max_turns": request.max_turns_per_learner,
-        "include_shivam": request.include_shivam,
-        "include_prem": request.include_prem,
+        "include_lucas": request.include_lucas,
+        "include_marcus": request.include_marcus,
         "document_id": request.document_id
     })
     
     try:
         # Check if this is a direct mode (no learners, just Pranav's explanation)
-        is_direct_mode = not request.include_shivam and not request.include_prem
+        is_direct_mode = not request.include_lucas and not request.include_marcus
         
         if is_direct_mode:
             logger.info(f"📝 Direct mode: Generating Pranav's explanation only", extra={"request_id": request_id})
         else:
             logger.info(f"📝 Multi-persona mode: Including learners", extra={
                 "request_id": request_id,
-                "include_shivam": request.include_shivam,
-                "include_prem": request.include_prem
+                "include_lucas": request.include_lucas,
+                "include_marcus": request.include_marcus
             })
         # Pretty-print supplied bundle info (if any) and document identifier
         print("--------------------------------")
@@ -178,8 +178,8 @@ async def generate_conversation(
         logger.info(f"📝 Processing paragraph", extra={
             "request_id": request_id,
             "paragraph_preview": request.paragraph[:100],
-            "shivam_questions_count": len(request.shivam_questions) if request.shivam_questions else 0,
-            "prem_questions_count": len(request.prem_questions) if request.prem_questions else 0
+            "lucas_questions_count": len(request.lucas_questions) if request.lucas_questions else 0,
+            "marcus_questions_count": len(request.marcus_questions) if request.marcus_questions else 0
         })
         
         # Initialize conversation system
@@ -187,10 +187,10 @@ async def generate_conversation(
         system = EducationConversationSystem(
             llm_client, 
             request.max_turns_per_learner,
-            include_shivam=request.include_shivam,
-            include_prem=request.include_prem,
-            shivam_description=request.shivam_description,
-            prem_description=request.prem_description
+            include_lucas=request.include_lucas,
+            include_marcus=request.include_marcus,
+            lucas_description=request.lucas_description,
+            marcus_description=request.marcus_description
         )
         system_init_duration = (time.time() - system_start) * 1000
         
@@ -203,8 +203,8 @@ async def generate_conversation(
         conversation_start = time.time()
         conversation_turns = system.generate_conversation(
             request.paragraph,
-            shivam_questions=request.shivam_questions,
-            prem_questions=request.prem_questions,
+            lucas_questions=request.lucas_questions,
+            marcus_questions=request.marcus_questions,
             num_questions_per_learner=request.num_questions_per_learner,
             direct_mode=is_direct_mode,
             bundle_id=request.bundle_id,
@@ -225,10 +225,10 @@ async def generate_conversation(
         
         # Determine which learners were included
         learners_included = []
-        if request.include_shivam:
-            learners_included.append("Shivam")
-        if request.include_prem:
-            learners_included.append("Prem")
+        if request.include_lucas:
+            learners_included.append("Lucas")
+        if request.include_marcus:
+            learners_included.append("Marcus")
         
         response_build_duration = (time.time() - response_start) * 1000
         total_duration = (time.time() - start_time) * 1000

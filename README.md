@@ -13,8 +13,8 @@ A comprehensive document analysis platform that combines PDF processing with AI-
 - **Interactive Chat Interface**: Click on any document chunk to start an AI-powered conversation
 - **Multi-Persona Learning**: Engage with AI personas including:
   - **Pranav**: Expert explainer providing layered explanations
-  - **Shivam**: Beginner learner asking basic questions
-  - **Prem**: Advanced learner asking deep technical questions
+  - **Lucas**: Beginner learner asking basic questions
+- **Marcus**: Advanced learner asking deep technical questions
 - **Flexible LLM Support**: Choose between local Ollama models or OpenAI
 - **Customizable Conversations**: Set custom descriptions and questions for each persona
 

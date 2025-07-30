@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { documentApi } from "../services/api";
 import { ProTable } from "@ant-design/pro-components";
 import { 
@@ -628,18 +628,21 @@ const ChunksViewer = () => {
                 }}>📄</span>
               </div>
               <div>
+                <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                {/* ShiruVox: As we click on the logo, we will be redirected to the landing page */}
                 <h1 style={{
                   fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
                   fontWeight: 'var(--font-weight-bold)',
                   color: 'var(--color-text-primary)',
                   margin: 0
-                }}>ShiruVox Content Studio</h1>
+                }}>ShiruVox</h1>
                 <p style={{
                   fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-secondary)',
                   margin: 0,
                   display: isMobile ? 'none' : 'block'
-                }}>Manage and enhance your content with AI-powered tools</p>
+                }}>Turning Research into Resonance</p>
+                </Link>
               </div>
             </div>
             <div style={{

@@ -22,11 +22,11 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
     api_key: '',
     openai_model: 'gpt-4o',
     max_turns_per_learner: 2,
-    interaction_mode: 'both', // 'both', 'shivam', 'prem', 'direct'
-    shivam_description: '',
-    prem_description: '',
-    shivam_questions: '',
-    prem_questions: '',
+    interaction_mode: 'both', // 'both', 'lucas', 'marcus', 'direct'
+    lucas_description: '',
+    marcus_description: '',
+    lucas_questions: '',
+    marcus_questions: '',
     num_questions_per_learner: ''
   });
 
@@ -62,8 +62,8 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
 
   const avatarMap = {
     'Pranav': '🧑‍🏫',
-    'Shivam': '🧒',
-    'Prem': '👨‍🎓',
+    'Lucas': '🧒',
+    'Marcus': '👨‍🎓',
   };
 
   const localModels = [
@@ -83,20 +83,20 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
   const interactionModes = [
     { 
       value: 'both',
-      label: 'With Prem & Shivam',
+      label: 'With Marcus & Lucas',
       description: 'Full educational conversation with both personas',
       icon: '👥'
     },
     {
-      value: 'shivam',
-      label: 'With Shivam',
-      description: 'Beginner-friendly conversation with Shivam',
+      value: 'lucas',
+      label: 'With Lucas',
+      description: 'Beginner-friendly conversation with Lucas',
       icon: '🧒'
     },
     {
-      value: 'prem',
-      label: 'With Prem',
-      description: 'Advanced technical conversation with Prem',
+      value: 'marcus',
+      label: 'With Marcus',
+      description: 'Advanced technical conversation with Marcus',
       icon: '👨‍🎓'
     },
     {
@@ -131,15 +131,15 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
     setShowExport(false);
 
     // Determine which personas to include based on interaction mode
-    const include_shivam = formData.interaction_mode === 'both' || formData.interaction_mode === 'shivam';
-    const include_prem = formData.interaction_mode === 'both' || formData.interaction_mode === 'prem';
+    const include_lucas = formData.interaction_mode === 'both' || formData.interaction_mode === 'lucas';
+    const include_marcus = formData.interaction_mode === 'both' || formData.interaction_mode === 'marcus';
 
     const payload = {
       paragraph: formData.paragraph,
       llm_provider: formData.llm_provider,
       max_turns_per_learner: parseInt(formData.max_turns_per_learner),
-      include_shivam: include_shivam,
-      include_prem: include_prem
+      include_lucas: include_lucas,
+      include_marcus: include_marcus
     };
 
     // Add bundle information only when a bundle_id is provided
@@ -155,22 +155,22 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
     }
 
     // Add custom descriptions if provided
-    if (formData.shivam_description.trim()) {
-      payload.shivam_description = formData.shivam_description.trim();
+    if (formData.lucas_description.trim()) {
+      payload.lucas_description = formData.lucas_description.trim();
     }
-    if (formData.prem_description.trim()) {
-      payload.prem_description = formData.prem_description.trim();
+    if (formData.marcus_description.trim()) {
+      payload.marcus_description = formData.marcus_description.trim();
     }
 
     // Add user questions if provided
-    const shivamQuestions = parseQuestions(formData.shivam_questions);
-    const premQuestions = parseQuestions(formData.prem_questions);
+    const lucasQuestions = parseQuestions(formData.lucas_questions);
+    const marcusQuestions = parseQuestions(formData.marcus_questions);
 
-    if (shivamQuestions) {
-      payload.shivam_questions = shivamQuestions;
+    if (lucasQuestions) {
+      payload.lucas_questions = lucasQuestions;
     }
-    if (premQuestions) {
-      payload.prem_questions = premQuestions;
+    if (marcusQuestions) {
+      payload.marcus_questions = marcusQuestions;
     }
 
     // Add number of questions per learner if specified
@@ -449,86 +449,86 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
                     👥 Learner Configuration
                   </h3>
                   <div className="learner-options">
-                    {/* Shivam Configuration */}
-                    {(formData.interaction_mode === 'both' || formData.interaction_mode === 'shivam') && (
+                    {/* Lucas Configuration */}
+                    {(formData.interaction_mode === 'both' || formData.interaction_mode === 'lucas') && (
                       <div className="learner-option">
                         <div className="learner-header">
                           <span className="learner-avatar">🧒</span>
-                          <h4>Shivam (Beginner)</h4>
+                          <h4>Lucas (Beginner)</h4>
                         </div>
                         <div className="learner-details">
                           <div className="form-group">
-                            <label htmlFor="shivam_description" className="form-label">
+                            <label htmlFor="lucas_description" className="form-label">
                               Custom Description (Optional)
                             </label>
                             <textarea
-                              id="shivam_description"
-                              name="shivam_description"
-                              value={formData.shivam_description}
+                              id="lucas_description"
+                              name="lucas_description"
+                              value={formData.lucas_description}
                               onChange={handleInputChange}
-                              placeholder="Custom description for Shivam..."
+                              placeholder="Custom description for Lucas..."
                               className="form-textarea"
                               rows={3}
                             />
                           </div>
                           <div className="form-group">
-                            <label htmlFor="shivam_questions" className="form-label">
-                              Shivam's Questions (One per line, optional)
+                            <label htmlFor="lucas_questions" className="form-label">
+                              Lucas's Questions (One per line, optional)
                             </label>
                             <textarea
-                              id="shivam_questions"
-                              name="shivam_questions"
-                              value={formData.shivam_questions}
+                              id="lucas_questions"
+                              name="lucas_questions"
+                              value={formData.lucas_questions}
                               onChange={handleInputChange}
                               placeholder="What is machine learning?&#10;How does it work?&#10;Why is it useful?"
                               className="form-textarea"
                               rows={4}
                             />
                             <small className="form-help">
-                              Leave empty for auto-generated questions based on Shivam's persona
+                              Leave empty for auto-generated questions based on Lucas's persona
                             </small>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Prem Configuration */}
-                    {(formData.interaction_mode === 'both' || formData.interaction_mode === 'prem') && (
+                    {/* Marcus Configuration */}
+                    {(formData.interaction_mode === 'both' || formData.interaction_mode === 'marcus') && (
                       <div className="learner-option">
                         <div className="learner-header">
                           <span className="learner-avatar">👨‍🎓</span>
-                          <h4>Prem (Advanced)</h4>
+                          <h4>Marcus (Advanced)</h4>
                         </div>
                         <div className="learner-details">
                           <div className="form-group">
-                            <label htmlFor="prem_description" className="form-label">
+                            <label htmlFor="marcus_description" className="form-label">
                               Custom Description (Optional)
                             </label>
                             <textarea
-                              id="prem_description"
-                              name="prem_description"
-                              value={formData.prem_description}
+                              id="marcus_description"
+                              name="marcus_description"
+                              value={formData.marcus_description}
                               onChange={handleInputChange}
-                              placeholder="Custom description for Prem..."
+                              placeholder="Custom description for Marcus..."
                               className="form-textarea"
                               rows={3}
                             />
                           </div>
                           <div className="form-group">
-                            <label htmlFor="prem_questions" className="form-label">
-                              Prem's Questions (One per line, optional)
+                            <label htmlFor="marcus_questions" className="form-label">
+                              Marcus's Questions (One per line, optional)
                             </label>
                             <textarea
-                              id="prem_questions"
-                              name="prem_questions"
-                              value={formData.prem_questions}
+                              id="marcus_questions"
+                              name="marcus_questions"
+                              value={formData.marcus_questions}
                               onChange={handleInputChange}
                               placeholder="What are the theoretical foundations of ML algorithms?&#10;How do gradient descent optimizations work?&#10;What are the limitations of current approaches?"
                               className="form-textarea"
                               rows={4}
                             />
                             <small className="form-help">
-                              Leave empty for auto-generated questions based on Prem's persona
+                              Leave empty for auto-generated questions based on Marcus's persona
                             </small>
                           </div>
                         </div>
@@ -615,7 +615,9 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
                   icon={<CloseOutlined />}
                   aria-label="Close modal"
                   className="close-button"
-                />
+                >
+                  <CloseOutlined />
+                </Button>
               </div>
             </div>
             
