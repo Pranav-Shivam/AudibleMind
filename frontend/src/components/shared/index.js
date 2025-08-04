@@ -10,4 +10,6 @@ export { default as ToastNotification } from './ToastNotification';
 
 // Enhanced Components
 export { default as ErrorBoundary } from './ErrorBoundary';
-export { default as FileUpload } from './FileUpload'; 
+export { default as FileUpload } from './FileUpload';
+export { default as PromptModal } from './PromptModal';
+export { default as NavBar } from './NavBar'; 

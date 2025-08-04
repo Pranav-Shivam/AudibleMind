@@ -142,84 +142,11 @@ const LandingPage = () => {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: 'calc(100vh - 64px)', // Account for NavBar height
       display: 'flex',
       flexDirection: 'column',
       background: 'linear-gradient(135deg, var(--color-primary-subtle) 0%, white 50%, var(--color-surface-secondary) 100%)'
     }}>
-      {/* Header */}
-      <header style={{
-        flexShrink: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--color-border-subtle)',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{
-          maxWidth: '80rem',
-          margin: '0 auto',
-          padding: '0 var(--spacing-4)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '48px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                background: 'var(--gradient-primary)',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{
-                  color: 'white',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-bold)'
-                }}>📄</span>
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--color-text-primary)'
-                }}>ShiruVox</h1>
-                <p style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--color-text-secondary)'
-                }}>Turning Research into Resonance</p>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-4)'
-            }}>
-              <span style={{
-                display: isMobile ? 'none' : 'inline-flex',
-                alignItems: 'center',
-                padding: 'var(--spacing-1) var(--spacing-3)',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--color-primary-subtle)',
-                color: 'var(--color-primary)',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--font-weight-medium)'
-              }}>
-                🚀 Transform Your Documents with AI
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main style={{
         flex: 1,

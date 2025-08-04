@@ -8,6 +8,7 @@ class DocumentModel(Document):
     created_at = DateTimeField()
     file_summary = TextField()
     total_chunks = IntegerField()
+    user_id = TextField()  # Owner of the document
 
 
 class ParagraphModel(Document):

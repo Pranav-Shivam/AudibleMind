@@ -57,8 +57,9 @@ class PDFChunker:
         text = re.sub(r'▪\s*', '  - ', text)
         
         logger.success(f"✅ Text cleaning completed", extra={
+            "original_length": len(text),
             "cleaned_length": len(text),
-            "reduction_percent": round((1 - len(text) / len(text)) * 100, 2) if text else 0
+            "reduction_percent": 0  # No reduction in current implementation
         })
         
         return text.strip()
@@ -108,11 +109,20 @@ class PDFChunker:
                     paragraphs = sentence_groups
                     logger.info(f"📋 Split by sentence groups: {len(paragraphs)} paragraphs")
         
-        # Filter out very short paragraphs (likely noise)
-        paragraphs = [p for p in paragraphs if len(p.strip()) > 30]
+        # Filter out very short paragraphs but be more lenient
+        original_count = len(paragraphs)
+        paragraphs = [p for p in paragraphs if len(p.strip()) > 15]  # Reduced from 30 to 15
+        
+        # If we filtered out too many paragraphs, try to recover by using the original text
+        if len(paragraphs) == 0 and text.strip():
+            logger.warning(f"⚠️ All paragraphs filtered out, using original text as single paragraph")
+            paragraphs = [text.strip()]
+        elif len(paragraphs) < original_count // 2 and text.strip():
+            logger.warning(f"⚠️ Filtered out {original_count - len(paragraphs)} paragraphs, may be too aggressive")
         
         logger.success(f"✅ Paragraph detection completed", extra={
-            "paragraphs_count": len(paragraphs),
+            "original_paragraphs": original_count,
+            "filtered_paragraphs": len(paragraphs),
             "average_paragraph_length": sum(len(p) for p in paragraphs) // len(paragraphs) if paragraphs else 0
         })
         
@@ -501,6 +511,17 @@ class PDFChunker:
                 "level": section_data["level"],
                 "position": position,
                 "content_length": len(current_content.strip())
+            })
+
+        # If no sections found, create a default section with all text
+        if not sections and text.strip():
+            logger.info(f"📝 No headings found, creating default section")
+            sections.append({
+                "title": "Document Content",
+                "content": text.strip(),
+                "level": 1,
+                "position": 0,
+                "id": self.generate_id()
             })
 
         logger.success(f"✅ Heading detection completed", extra={

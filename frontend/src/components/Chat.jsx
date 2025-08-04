@@ -191,7 +191,7 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
     }
 
     try {
-      const response = await fetch('http://localhost:8001/api/v1/generate-conversation', {
+      const response = await fetch(`${API_URL}/api/v1/generate-conversation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
