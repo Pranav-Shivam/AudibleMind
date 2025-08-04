@@ -8,6 +8,7 @@ import {
   PromptModal
 } from '../components/shared';
 import { documentApi, ApiError } from '../services/api';
+import { API_URL } from '../services/apiUrl';
 
 const Dashboard = () => {
   const navigate = useNavigate();
