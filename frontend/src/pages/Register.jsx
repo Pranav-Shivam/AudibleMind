@@ -131,7 +131,7 @@ const Register = () => {
         password: formData.password
       });
 
-      showToast('success', 'Account created successfully! Redirecting to login...', 'Welcome to ShiruVox');
+      showToast('success', 'Account created successfully! Redirecting to login...', 'Welcome to AudibleMind');
       
       setTimeout(() => {
         navigate('/login');
@@ -335,78 +335,6 @@ const Register = () => {
             </div>
           </form>
         </Card>
-
-        {/* Features Section */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: 'var(--spacing-6)',
-          padding: 'var(--spacing-4) 0'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: isMobile ? 'var(--spacing-4)' : 'var(--spacing-6)',
-            flexWrap: 'wrap'
-          }}>
-            {[
-              {
-                icon: '🚀',
-                title: 'Free Start',
-                description: 'No credit card required'
-              },
-              {
-                icon: '⚡',
-                title: 'Instant Setup',
-                description: 'Start analyzing immediately'
-              },
-              {
-                icon: '🔒',
-                title: 'Secure',
-                description: 'Enterprise-grade security'
-              }
-            ].map((feature, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface-secondary)',
-                  transition: 'all var(--transition-normal)',
-                  minWidth: isMobile ? '120px' : '140px',
-                  justifyContent: 'center'
-                }}
-              >
-                <span style={{
-                  fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
-                }}>
-                  {feature.icon}
-                </span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: '1px'
-                  }}>
-                    {feature.title}
-                  </div>
-                  <div style={{
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.2
-                  }}>
-                    {feature.description}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </main>
 
       {/* Toast Notifications */}

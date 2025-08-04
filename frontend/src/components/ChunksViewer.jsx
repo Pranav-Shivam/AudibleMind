@@ -36,7 +36,7 @@ import {
   CheckCircleOutlined,
   InfoCircleOutlined
 } from "@ant-design/icons";
-import ShiruVoxChunk from "./ContentViewer";
+import AudibleMindChunk from "./ContentViewer";
 import "../styles/ChunkViewer.css";
 import Chat from "./Chat";
 
@@ -832,7 +832,7 @@ const ChunksViewer = () => {
             >
               ✕
             </Button>
-            <ShiruVoxChunk 
+            <AudibleMindChunk 
               key={selectedChunk.chunk_index} 
               chunk={selectedChunk} 
               onAudioCreated={(audioElement) => {

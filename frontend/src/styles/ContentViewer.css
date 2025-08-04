@@ -1,7 +1,7 @@
 /* components/ContentViewer.css */
 
 /* Main Container - 100vh Layout */
-.shiruvox-container {
+.audiblemind-container {
   height: 90vh;
   max-width: 100%;
   margin: 0;
@@ -12,7 +12,7 @@
   overflow: hidden;
 }
 
-.shiruvox-card {
+.audiblemind-card {
   flex: 1;
   margin: 16px;
   background: var(--color-surface-primary);
@@ -27,7 +27,7 @@
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
 }
 
-.shiruvox-card:hover {
+.audiblemind-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-2xl);
 }
@@ -874,12 +874,12 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .shiruvox-container {
+  .audiblemind-container {
     margin: 0;
     padding: 0;
   }
 
-  .shiruvox-card {
+  .audiblemind-card {
     margin: 8px;
     border-radius: var(--radius-lg);
   }
@@ -938,7 +938,7 @@
 }
 
 @media (max-width: 480px) {
-  .shiruvox-card {
+  .audiblemind-card {
     margin: 4px;
     border-radius: var(--radius-md);
   }

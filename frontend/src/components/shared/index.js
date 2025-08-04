@@ -1,5 +1,5 @@
 // Shared Components - Modern UI Component Library
-// This file exports all reusable components for the ShiruVox application
+// This file exports all reusable components for the AudibleMind application
 
 // Core UI Components
 export { default as Button } from './Button';

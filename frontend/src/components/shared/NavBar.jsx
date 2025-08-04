@@ -82,7 +82,7 @@ const NavBar = ({ isAuthenticated = false, onLogout }) => {
                 color: 'var(--color-text-primary)',
                 margin: 0,
                 lineHeight: 1
-              }}>ShiruVox</h1>
+              }}>AudibleMind</h1>
               <p style={{
                 fontSize: 'var(--text-xs)',
                 color: 'var(--color-text-secondary)',

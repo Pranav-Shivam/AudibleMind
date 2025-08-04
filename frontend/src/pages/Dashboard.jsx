@@ -144,23 +144,16 @@ const Dashboard = () => {
             marginBottom: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
             lineHeight: 1.1
           }}>
-            Your
+            Enhance your documents
             <span style={{
               background: 'var(--gradient-text)',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              {' '}Documents
+              {' '}with AI-powered analysis
             </span>
           </h1>
-          <p style={{
-            fontSize: isMobile ? 'var(--text-sm)' : 'var(--text-base)',
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.4
-          }}>
-            Manage and enhance your documents with AI-powered analysis
-          </p>
         </div>
 
         {/* Quick Actions Bar */}
@@ -376,7 +369,7 @@ const Dashboard = () => {
                                 onClick={() => handleViewDocument(doc)}
                                 title="View PDF"
                               >
-                                👁️ View
+                                View
                               </Button>
                               <Button
                                 variant="secondary"
@@ -386,7 +379,7 @@ const Dashboard = () => {
                                 disabled={enhancingDocuments.has(doc.id)}
                                 title="Enhance with AI"
                               >
-                                🤖 AI
+                                AI
                               </Button>
                               <Button
                                 variant="primary"
@@ -395,7 +388,7 @@ const Dashboard = () => {
                                 disabled={enhancingDocuments.has(doc.id)}
                                 title="Enhance with Custom Prompt"
                               >
-                                ✨ Prompt
+                                 Prompt
                               </Button>
                             </div>
                           </td>
@@ -468,7 +461,7 @@ const Dashboard = () => {
                           onClick={() => handleViewDocument(doc)}
                           style={{ flex: 1, minWidth: '80px' }}
                         >
-                          👁️ View
+                          View
                         </Button>
                         <Button
                           variant="secondary"
@@ -478,7 +471,7 @@ const Dashboard = () => {
                           disabled={enhancingDocuments.has(doc.id)}
                           style={{ flex: 1, minWidth: '80px' }}
                         >
-                          🤖 AI
+                          AI
                         </Button>
                         <Button
                           variant="primary"
@@ -487,7 +480,7 @@ const Dashboard = () => {
                           disabled={enhancingDocuments.has(doc.id)}
                           style={{ flex: 1, minWidth: '80px' }}
                         >
-                          ✨ Prompt
+                          Prompt
                         </Button>
                       </div>
                     </div>
@@ -497,83 +490,6 @@ const Dashboard = () => {
             </>
           )}
         </Card>
-
-        {/* Features Section */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: 'var(--spacing-6)',
-          padding: 'var(--spacing-4) 0'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: isMobile ? 'var(--spacing-4)' : 'var(--spacing-6)',
-            flexWrap: 'wrap'
-          }}>
-            {[
-              {
-                icon: '⚡',
-                title: 'Fast Processing',
-                description: 'AI-powered analysis'
-              },
-              {
-                icon: '🧠',
-                title: 'Smart Summaries',
-                description: 'Intelligent insights'
-              },
-              {
-                icon: '💬',
-                title: 'Interactive Chat',
-                description: 'Ask questions about docs'
-              },
-              {
-                icon: '🔒',
-                title: 'Secure & Private',
-                description: 'Your data is protected'
-              }
-            ].map((feature, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface-secondary)',
-                  transition: 'all var(--transition-normal)',
-                  minWidth: isMobile ? '140px' : '160px',
-                  justifyContent: 'center'
-                }}
-              >
-                <span style={{
-                  fontSize: isMobile ? 'var(--text-lg)' : 'var(--text-xl)',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
-                }}>
-                  {feature.icon}
-                </span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: '1px'
-                  }}>
-                    {feature.title}
-                  </div>
-                  <div style={{
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.2
-                  }}>
-                    {feature.description}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </main>
 
       {/* Toast Notifications */}
