@@ -14,8 +14,8 @@ config = configuration.config
 
 class Role(Enum):
     PRANAV = "Pranav"
-    SHIVAM = "Shivam"
-    PREM = "Prem"
+    LUCAS = "Lucas"
+    MARCUS = "Marcus"
 
 class ConversationTurn:
     def __init__(self, speaker: Role, text: str, complexity_level: str = None, timestamp: str = None):
@@ -153,7 +153,8 @@ class OpenAIClient(LLMClient):
 
 class OllamaConnector:
     def __init__(self, model_name: str = None):
-        self.model_name = model_name or config.ollama.model
+        # self.model_name = model_name or config.ollama.model
+        self.model_name = "tinyllama:chat"
         logger.info(f"🦙 Initializing Ollama connector with model: {self.model_name}")
         
         try:
@@ -365,22 +366,22 @@ Conversation so far:
 Your tailored answer (Pranav):
 """
 
-class ShivamPersona(Persona):
+class LucasPersona(Persona):
     def __init__(self, custom_description: str = None):
         default_description = "A 10-year-old learner or a complete beginner. Curious, often confused, and needs foundational clarity. Questions focus on basic understanding, 'why' and 'how' in simple terms."
-        super().__init__("Shivam", custom_description or default_description, "10-year-old beginner")
+        super().__init__("Lucas", custom_description or default_description, "10-year-old beginner")
 
     def generate_question(self, llm_client: LLMClient, current_context: str, conversation_history: List[ConversationTurn]) -> str:
-        prompt = self._get_shivam_question_prompt(
+        prompt = self._get_lucas_question_prompt(
             persona_description=self.description,
             current_context=current_context,
             conversation_history=[f"{t.speaker.value}: {t.text}" for t in conversation_history]
         )
         return llm_client.generate(prompt)
 
-    def _get_shivam_question_prompt(self, persona_description: str, current_context: str, conversation_history: List[str]) -> str:
+    def _get_lucas_question_prompt(self, persona_description: str, current_context: str, conversation_history: List[str]) -> str:
         history_str = "\n".join(conversation_history[-5:]) if conversation_history else "No prior conversation."
-        return f"""You are Shivam, a curious learner. Your goal is to ask a basic, foundational question about the concept being explained.
+        return f"""You are Lucas, a curious learner. Your goal is to ask a basic, foundational question about the concept being explained.
 Your persona description: {persona_description}
 Focus on clarifying something you don't understand, asking 'why' or 'how' in simple terms, or relating it to something you know.
 Avoid complex jargon. Ask only ONE question.
@@ -389,25 +390,25 @@ Here's the current explanation context: \"\"\"{current_context}\"\"\"
 Conversation so far:
 {history_str}
 
-Your question (Shivam):
+Your question (Lucas):
 """
 
-class PremPersona(Persona):
+class MarcusPersona(Persona):
     def __init__(self, custom_description: str = None):
         default_description = "An aspiring PhD or advanced learner with a technical background. Questions focus on deeper understanding, model internals, edge cases, comparative insights, and theoretical underpinnings."
-        super().__init__("Prem", custom_description or default_description, "advanced learner/aspiring PhD")
+        super().__init__("Marcus", custom_description or default_description, "advanced learner/aspiring PhD")
 
     def generate_question(self, llm_client: LLMClient, current_context: str, conversation_history: List[ConversationTurn]) -> str:
-        prompt = self._get_prem_question_prompt(
+        prompt = self._get_marcus_question_prompt(
             persona_description=self.description,
             current_context=current_context,
             conversation_history=[f"{t.speaker.value}: {t.text}" for t in conversation_history]
         )
         return llm_client.generate(prompt)
 
-    def _get_prem_question_prompt(self, persona_description: str, current_context: str, conversation_history: List[str]) -> str:
+    def _get_marcus_question_prompt(self, persona_description: str, current_context: str, conversation_history: List[str]) -> str:
         history_str = "\n".join(conversation_history[-5:]) if conversation_history else "No prior conversation."
-        return f"""You are Prem, an advanced learner with a technical background. Your goal is to ask a deep, insightful question about the concept.
+        return f"""You are Marcus, an advanced learner with a technical background. Your goal is to ask a deep, insightful question about the concept.
 Your persona description: {persona_description}
 Focus on model internals, edge cases, comparative insights with other models/techniques, theoretical implications, or complex 'how' and 'why' aspects.
 Assume a good foundational understanding from Pranav's explanation. Ask only ONE question.
@@ -416,18 +417,18 @@ Here's the current explanation context: \"\"\"{current_context}\"\"\"
 Conversation so far:
 {history_str}
 
-Your question (Prem):
+Your question (Marcus):
 """
 
 class EducationConversationSystem:
     def __init__(self, llm_client: LLMClient, max_turns_per_learner: int = 3, 
-                 include_shivam: bool = True, include_prem: bool = True,
-                 shivam_description: str = None, prem_description: str = None):
+                 include_lucas: bool = True, include_marcus: bool = True,
+                 lucas_description: str = None, marcus_description: str = None):
         
         logger.info(f"🎓 Initializing EducationConversationSystem", extra={
             "max_turns_per_learner": max_turns_per_learner,
-            "include_shivam": include_shivam,
-            "include_prem": include_prem,
+            "include_lucas": include_lucas,
+            "include_marcus": include_marcus,
             "llm_client_type": type(llm_client).__name__
         })
         
@@ -435,25 +436,25 @@ class EducationConversationSystem:
         self.content_processor = ContentProcessor(llm_client)
         self.dialogue_manager = DialogueManager(config.processing.max_history_tokens)
         self.pranav = PranavPersona()
-        self.shivam = ShivamPersona(shivam_description) if include_shivam else None
-        self.prem = PremPersona(prem_description) if include_prem else None
+        self.lucas = LucasPersona(lucas_description) if include_lucas else None
+        self.marcus = MarcusPersona(marcus_description) if include_marcus else None
         self.max_turns_per_learner = max_turns_per_learner
         self.conversation_history: List[ConversationTurn] = []
-        self.include_shivam = include_shivam
-        self.include_prem = include_prem
+        self.include_lucas = include_lucas
+        self.include_marcus = include_marcus
         
         # Log persona setup
         personas = ["Pranav"]
-        if self.shivam:
-            personas.append("Shivam")
-        if self.prem:
-            personas.append("Prem")
+        if self.lucas:
+            personas.append("Lucas")
+        if self.marcus:
+            personas.append("Marcus")
         
         logger.info(f"👥 Active personas: {', '.join(personas)}", extra={"personas": personas})
 
     def generate_conversation(self, technical_paragraph: str, 
-                            shivam_questions: List[str] = None, 
-                            prem_questions: List[str] = None,
+                            lucas_questions: List[str] = None, 
+                            marcus_questions: List[str] = None,
                             num_questions_per_learner: int = None,
                             direct_mode: bool = False,
                             bundle_id: str = None,
@@ -465,8 +466,8 @@ class EducationConversationSystem:
         logger.info(f"🚀 Starting conversation generation", extra={
             "paragraph_length": len(technical_paragraph),
             "direct_mode": direct_mode,
-            "shivam_questions_provided": len(shivam_questions) if shivam_questions else 0,
-            "prem_questions_provided": len(prem_questions) if prem_questions else 0,
+            "lucas_questions_provided": len(lucas_questions) if lucas_questions else 0,
+            "marcus_questions_provided": len(marcus_questions) if marcus_questions else 0,
             "num_questions_per_learner": num_questions_per_learner or self.max_turns_per_learner
         })
         
@@ -502,7 +503,7 @@ class EducationConversationSystem:
                 if bundle_id:
                     try:
                         # Initialize bundle service
-                        bundle_service = BundleService()
+                        bundle_service = BundleService(self.llm_client)
                         
                         # Get bundle summary
                         logger.info(f"📦 Retrieving bundle summary for bundle_id: {bundle_id}")
@@ -514,9 +515,8 @@ class EducationConversationSystem:
                             logger.info(f"📦 Bundle summary found")
                             bundle_context = f"Explaining with chunk_text: {bundle_text}"
                             prompt_manager = PromptManager()
-                            ollama_connector = OllamaConnector()
                             pranav_tailored_summary_prompt = prompt_manager.get_pranav_tailored_summary_prompt(bundle_context, bundle_summary)
-                            pranav_tailored_summary = ollama_connector.make_ollama_call(pranav_tailored_summary_prompt)
+                            pranav_tailored_summary = self.llm_client.generate(pranav_tailored_summary_prompt, temperature=0.3, max_tokens=1000)
                             logger.info(f"✅ Pranav tailored summary generated", extra={
                                 "pranav_tailored_summary": pranav_tailored_summary
                             })
@@ -553,79 +553,79 @@ class EducationConversationSystem:
                 turn_start = time.time()
                 logger.info(f"🔄 Generating conversation turn {i+1}/{num_questions}")
                 
-                # Handle Shivam's questions and answers (if included)
-                if self.include_shivam and self.shivam:
-                    logger.debug(f"💭 Processing Shivam (beginner) interaction")
+                # Handle Lucas's questions and answers (if included)
+                if self.include_lucas and self.lucas:
+                    logger.debug(f"💭 Processing Lucas (beginner) interaction")
                     
                     # Use user-provided question or generate one
-                    if shivam_questions and i < len(shivam_questions):
-                        shivam_question = shivam_questions[i].strip()
-                        logger.info(f"📋 Using user-provided Shivam question: {shivam_question[:50]}...")
+                    if lucas_questions and i < len(lucas_questions):
+                        lucas_question = lucas_questions[i].strip()
+                        logger.info(f"📋 Using user-provided Lucas question: {lucas_question[:50]}...")
                     else:
                         # Generate concise one-liner question based on persona
                         question_start = time.time()
-                        shivam_question = self._generate_pranav_led_question_for_shivam(
+                        lucas_question = self._generate_pranav_led_question_for_lucas(
                             technical_paragraph, self.dialogue_manager.get_current_context()
                         )
                         question_duration = (time.time() - question_start) * 1000
-                        logger.info(f"🤔 Generated Pranav-led question for Shivam", extra={
-                            "question_preview": shivam_question[:50],
+                        logger.info(f"🤔 Generated Pranav-led question for Lucas", extra={
+                            "question_preview": lucas_question[:50],
                             "duration": round(question_duration, 2)
                         })
                     
-                    self.add_turn(Role.SHIVAM, shivam_question)
+                    self.add_turn(Role.LUCAS, lucas_question)
 
-                    # Generate Pranav's answer to Shivam
+                    # Generate Pranav's answer to Lucas
                     answer_start = time.time()
-                    pranav_answer_shivam = self.pranav.generate_tailored_answer(
-                        self.llm_client, shivam_question, self.dialogue_manager.get_current_context(),
-                        self.conversation_history, self.shivam.target_audience
+                    pranav_answer_lucas = self.pranav.generate_tailored_answer(
+                        self.llm_client, lucas_question, self.dialogue_manager.get_current_context(),
+                        self.conversation_history, self.lucas.target_audience
                     )
                     answer_duration = (time.time() - answer_start) * 1000
-                    logger.debug(f"💡 Pranav answered Shivam", extra={
-                        "answer_length": len(pranav_answer_shivam),
+                    logger.debug(f"💡 Pranav answered Lucas", extra={
+                        "answer_length": len(pranav_answer_lucas),
                         "duration": round(answer_duration, 2)
                     })
                     
-                    self.add_turn(Role.PRANAV, pranav_answer_shivam)
-                    self.dialogue_manager.update_context(pranav_answer_shivam)
+                    self.add_turn(Role.PRANAV, pranav_answer_lucas)
+                    self.dialogue_manager.update_context(pranav_answer_lucas)
 
-                # Handle Prem's questions and answers (if included)
-                if self.include_prem and self.prem:
-                    logger.debug(f"🧠 Processing Prem (advanced) interaction")
+                # Handle Marcus's questions and answers (if included)
+                if self.include_marcus and self.marcus:
+                    logger.debug(f"🧠 Processing Marcus (advanced) interaction")
                     
                     # Use user-provided question or generate one
-                    if prem_questions and i < len(prem_questions):
-                        prem_question = prem_questions[i].strip()
-                        logger.info(f"📋 Using user-provided Prem question: {prem_question[:50]}...")
+                    if marcus_questions and i < len(marcus_questions):
+                        marcus_question = marcus_questions[i].strip()
+                        logger.info(f"📋 Using user-provided Marcus question: {marcus_question[:50]}...")
                     else:
                         # Generate concise one-liner question based on persona
                         question_start = time.time()
-                        prem_question = self._generate_pranav_led_question_for_prem(
+                        marcus_question = self._generate_pranav_led_question_for_marcus(
                             technical_paragraph, self.dialogue_manager.get_current_context()
                         )
                         question_duration = (time.time() - question_start) * 1000
-                        logger.info(f"🎯 Generated Pranav-led question for Prem", extra={
-                            "question_preview": prem_question[:50],
+                        logger.info(f"🎯 Generated Pranav-led question for Marcus", extra={
+                            "question_preview": marcus_question[:50],
                             "duration": round(question_duration, 2)
                         })
                     
-                    self.add_turn(Role.PREM, prem_question)
+                    self.add_turn(Role.MARCUS, marcus_question)
 
-                    # Generate Pranav's answer to Prem
+                    # Generate Pranav's answer to Marcus
                     answer_start = time.time()
-                    pranav_answer_prem = self.pranav.generate_tailored_answer(
-                        self.llm_client, prem_question, self.dialogue_manager.get_current_context(),
-                        self.conversation_history, self.prem.target_audience
+                    pranav_answer_marcus = self.pranav.generate_tailored_answer(
+                        self.llm_client, marcus_question, self.dialogue_manager.get_current_context(),
+                        self.conversation_history, self.marcus.target_audience
                     )
                     answer_duration = (time.time() - answer_start) * 1000
-                    logger.debug(f"🔬 Pranav answered Prem", extra={
-                        "answer_length": len(pranav_answer_prem),
+                    logger.debug(f"🔬 Pranav answered Marcus", extra={
+                        "answer_length": len(pranav_answer_marcus),
                         "duration": round(answer_duration, 2)
                     })
                     
-                    self.add_turn(Role.PRANAV, pranav_answer_prem)
-                    self.dialogue_manager.update_context(pranav_answer_prem)
+                    self.add_turn(Role.PRANAV, pranav_answer_marcus)
+                    self.dialogue_manager.update_context(pranav_answer_marcus)
                 
                 turn_duration = (time.time() - turn_start) * 1000
                 logger.info(f"✅ Completed turn {i+1}/{num_questions}", extra={
@@ -643,8 +643,8 @@ class EducationConversationSystem:
             LoggerUtils.log_performance("conversation_generation", total_duration,
                                       turns_generated=len(self.conversation_history),
                                       num_questions=num_questions,
-                                      include_shivam=self.include_shivam,
-                                      include_prem=self.include_prem)
+                                      include_lucas=self.include_lucas,
+                                      include_marcus=self.include_marcus)
             
             return self.conversation_history
             
@@ -662,9 +662,9 @@ class EducationConversationSystem:
             })
             raise
 
-    def _generate_pranav_led_question_for_shivam(self, technical_paragraph: str, current_context: str) -> str:
-        """Generate a concise one-liner question that Pranav would ask to guide Shivam's learning"""
-        prompt = f"""You are Pranav, an expert teacher. You need to generate ONE concise, simple question that would help a beginner (Shivam) understand the concept better.
+    def _generate_pranav_led_question_for_lucas(self, technical_paragraph: str, current_context: str) -> str:
+        """Generate a concise one-liner question that Pranav would ask to guide Lucas's learning"""
+        prompt = f"""You are Pranav, an expert teacher. You need to generate ONE concise, simple question that would help a beginner (Lucas) understand the concept better.
 
 The question should:
 - Be simple and foundational
@@ -676,13 +676,13 @@ The question should:
 Original topic: "{technical_paragraph}"
 Current explanation context: "{current_context}"
 
-Generate a simple question that Shivam (beginner) might ask:
+Generate a simple question that Lucas (beginner) might ask:
 """
         return self.llm_client.generate(prompt, temperature=0.7, max_tokens=100).strip()
 
-    def _generate_pranav_led_question_for_prem(self, technical_paragraph: str, current_context: str) -> str:
-        """Generate a concise one-liner question that Pranav would ask to guide Prem's advanced learning"""
-        prompt = f"""You are Pranav, an expert teacher. You need to generate ONE concise, technical question that would help an advanced learner (Prem) dive deeper into the concept.
+    def _generate_pranav_led_question_for_marcus(self, technical_paragraph: str, current_context: str) -> str:
+        """Generate a concise one-liner question that Pranav would ask to guide Marcus's advanced learning"""
+        prompt = f"""You are Pranav, an expert teacher. You need to generate ONE concise, technical question that would help an advanced learner (Marcus) dive deeper into the concept.
 
 The question should:
 - Be technically sophisticated
@@ -694,7 +694,7 @@ The question should:
 Original topic: "{technical_paragraph}"
 Current explanation context: "{current_context}"
 
-Generate an advanced question that Prem (advanced learner) might ask:
+Generate an advanced question that Marcus (advanced learner) might ask:
 """
         return self.llm_client.generate(prompt, temperature=0.7, max_tokens=100).strip()
 
@@ -708,15 +708,15 @@ Generate an advanced question that Prem (advanced learner) might ask:
             "total_turns": len(self.conversation_history)
         })
 
-    def update_persona_descriptions(self, shivam_description: str = None, prem_description: str = None):
+    def update_persona_descriptions(self, lucas_description: str = None, marcus_description: str = None):
         """Update persona descriptions"""
         updates = []
-        if shivam_description and self.shivam:
-            self.shivam.update_description(shivam_description)
-            updates.append("Shivam")
-        if prem_description and self.prem:
-            self.prem.update_description(prem_description)
-            updates.append("Prem")
+        if lucas_description and self.lucas:
+            self.lucas.update_description(lucas_description)
+            updates.append("Lucas")
+        if marcus_description and self.marcus:
+            self.marcus.update_description(marcus_description)
+            updates.append("Marcus")
         
         if updates:
             logger.info(f"🔄 Updated persona descriptions: {', '.join(updates)}", extra={"updated_personas": updates})

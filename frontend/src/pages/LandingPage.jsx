@@ -195,7 +195,7 @@ const LandingPage = () => {
                 <p style={{
                   fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-secondary)'
-                }}>AI-Powered Document Intelligence</p>
+                }}>Turning Research into Resonance</p>
               </div>
             </div>
             <div style={{

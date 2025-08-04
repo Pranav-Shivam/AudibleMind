@@ -10,46 +10,24 @@ from core import configuration
 from core.logger import logger, LoggerUtils
 
 class DocumentSummarizer:
-    def __init__(self):
+    def __init__(self, llm_client=None):
         logger.info("🤖 Initializing DocumentSummarizer")
         start_time = time.time()
         
-        self.model_name = configuration.config.ollama.model
-        self.ollama_connector = OllamaConnector(self.model_name)
+        self.llm_client = llm_client
+        if not self.llm_client:
+            # Fallback to Ollama if no client provided
+            self.model_name = configuration.config.ollama.model
+            self.llm_client = OllamaConnector(self.model_name)
+            
         self.prompt_manager = PromptManager()
         self.text_processing = TextProcessing()
         
-        # Test connection and model availability
-        try:
-            models_list = self.ollama_connector.client.list()
-            available_models = [model['name'] for model in models_list['models']]
-            
-            init_duration = (time.time() - start_time) * 1000
-            
-            if self.model_name in available_models:
-                logger.success(f"✅ DocumentSummarizer initialized successfully", extra={
-                    "model": self.model_name,
-                    "available_models": len(available_models),
-                    "init_duration": round(init_duration, 2)
-                })
-            else:
-                logger.warning(f"⚠️ Model {self.model_name} not found in available models", extra={
-                    "requested_model": self.model_name,
-                    "available_models": available_models
-                })
-                
-        except Exception as e:
-            init_duration = (time.time() - start_time) * 1000
-            logger.error(f"❌ Error connecting to Ollama: {e}", extra={
-                "model": self.model_name,
-                "init_duration": round(init_duration, 2)
-            })
-            LoggerUtils.log_error_with_context(e, {
-                "component": "document_summarizer_init",
-                "model": self.model_name,
-                "duration": init_duration
-            })
-            raise Exception(f"Make sure Ollama is running and the model {self.model_name} is available")
+        init_duration = (time.time() - start_time) * 1000
+        logger.success(f"✅ DocumentSummarizer initialized successfully", extra={
+            "llm_client_type": type(self.llm_client).__name__,
+            "init_duration": round(init_duration, 2)
+        })
     
     def summarize_chunk_group(self, chunks: List[str], user_prompt: str, group_index: int, total_groups: int) -> str:
         """Summarize a group of 4-8 chunks together."""
@@ -71,7 +49,7 @@ class DocumentSummarizer:
             "prompt_length": len(system_prompt)
         })
         
-        summary = self.ollama_connector.make_ollama_call(system_prompt, temperature=0.3, max_tokens=1500)
+        summary = self.llm_client.generate(system_prompt, temperature=0.3, max_tokens=1500) if hasattr(self.llm_client, 'generate') else self.llm_client.make_ollama_call(system_prompt, temperature=0.3, max_tokens=1500)
         
         duration = (time.time() - start_time) * 1000
         logger.success(f"✅ Group {group_index + 1} summarized", extra={
@@ -101,7 +79,7 @@ class DocumentSummarizer:
             "prompt_length": len(system_prompt)
         })
         
-        summary = self.ollama_connector.make_ollama_call(system_prompt, temperature=0.3, max_tokens=800)
+        summary = self.llm_client.generate(system_prompt, temperature=0.3, max_tokens=800) if hasattr(self.llm_client, 'generate') else self.llm_client.make_ollama_call(system_prompt, temperature=0.3, max_tokens=800)
         
         duration = (time.time() - start_time) * 1000
         logger.success(f"✅ Chunk summarized", extra={
@@ -134,7 +112,7 @@ class DocumentSummarizer:
             "prompt_length": len(system_prompt)
         })
         
-        final_summary = self.ollama_connector.make_ollama_call(system_prompt, temperature=0.3, max_tokens=2000)
+        final_summary = self.llm_client.generate(system_prompt, temperature=0.3, max_tokens=2000) if hasattr(self.llm_client, 'generate') else self.llm_client.make_ollama_call(system_prompt, temperature=0.3, max_tokens=2000)
         
         duration = (time.time() - start_time) * 1000
         logger.success(f"✅ Final summary created", extra={
