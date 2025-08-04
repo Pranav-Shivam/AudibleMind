@@ -219,7 +219,7 @@ const Register = () => {
             color: 'var(--color-text-secondary)',
             lineHeight: 1.4
           }}>
-            Join thousands of researchers and professionals transforming their document workflows with AI.
+            Join researchers and professionals transforming their document workflows with AI.
           </p>
         </div>
 
