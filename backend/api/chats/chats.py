@@ -8,6 +8,7 @@ from datetime import datetime
 from chats.chats import EducationConversationSystem, OpenAIClient, LocalLLMClient, Role
 from core import configuration
 from core.logger import logger, LoggerUtils
+from core.utils.helper import clean_text
 config = configuration.config
 
 # Create router
@@ -136,10 +137,11 @@ async def generate_conversation(
     """
     start_time = time.time()
     request_id = f"conv_{int(start_time * 1000)}"
+    paragraph = clean_text(request.paragraph)
     
     logger.info(f"🚀 Starting conversation generation", extra={
         "request_id": request_id,
-        "paragraph_length": len(request.paragraph),
+        "paragraph_length": len(paragraph),
         "llm_provider": request.llm_provider,
         "max_turns": request.max_turns_per_learner,
         "include_lucas": request.include_lucas,
@@ -179,7 +181,7 @@ async def generate_conversation(
         
         logger.info(f"📝 Processing paragraph", extra={
             "request_id": request_id,
-            "paragraph_preview": request.paragraph[:100],
+            "paragraph_preview": paragraph[:100],
             "lucas_questions_count": len(request.lucas_questions) if request.lucas_questions else 0,
             "marcus_questions_count": len(request.marcus_questions) if request.marcus_questions else 0
         })
@@ -204,7 +206,7 @@ async def generate_conversation(
         # Generate conversation
         conversation_start = time.time()
         conversation_turns = system.generate_conversation(
-            request.paragraph,
+            paragraph,
             lucas_questions=request.lucas_questions,
             marcus_questions=request.marcus_questions,
             num_questions_per_learner=request.num_questions_per_learner,
@@ -248,7 +250,7 @@ async def generate_conversation(
         # Log API performance
         LoggerUtils.log_performance("api_conversation_generation", total_duration,
                                   turns=len(conversation_turns),
-                                  paragraph_length=len(request.paragraph),
+                                  paragraph_length=len(paragraph),
                                   llm_provider=request.llm_provider)
         
         return ConversationResponse(
@@ -268,7 +270,7 @@ async def generate_conversation(
             "request_id": request_id,
             "duration": round(total_duration, 2),
             "error_type": type(e).__name__,
-            "paragraph_length": len(request.paragraph)
+            "paragraph_length": len(paragraph)
         })
         LoggerUtils.log_error_with_context(e, {
             "component": "api_conversation_generation",

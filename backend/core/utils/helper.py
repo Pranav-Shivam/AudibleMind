@@ -5,6 +5,8 @@ from core.configuration import *
 from core.logger import logger, LoggerUtils
 import openai
 import tiktoken
+from core.prompt.prompt import PromptManager
+from core.ollama_setup.connector import OllamaConnector
 
 EMBEDDING_ENCODING = "cl100k_base"
 
@@ -242,3 +244,9 @@ def parse_openai_dict(openai_output):
             "duration": duration
         })
         return {}
+
+def clean_text(text: str) -> str:
+    prompt = PromptManager().get_clean_text_prompt(text)
+    config = Config()
+    response = OllamaConnector(config.ollama.small_model).make_ollama_call(prompt)
+    return response

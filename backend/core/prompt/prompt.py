@@ -265,3 +265,20 @@ In your response, address the following:
 Please provide a well-composed, conceptually rich explanation that reflects a deep understanding of the material. Avoid mentioning terms like “chunk” or variable names. Write in an academic tone, as if composing a commentary for a research seminar or scholarly review.
 """
         return response_prompt
+    
+    
+    def get_clean_text_prompt(self, text: str) -> str:
+        prompt = f"""You are a technical editor.
+
+Clean up the following technical text:
+
+- Fix grammar and formatting.
+- Improve clarity and sentence structure.
+- Keep all original meaning and technical terms.
+- Do not add, simplify, or rephrase beyond what is necessary.
+- Structure with headings if needed.
+
+TEXT TO CLEAN:
+{text}
+"""
+        return prompt
