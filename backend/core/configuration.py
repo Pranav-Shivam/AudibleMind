@@ -63,6 +63,11 @@ class ProcessingConfig:
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "2500"))
     max_history_tokens: int = int(os.getenv("MAX_HISTORY_TOKENS", "1000"))
 
+@dataclass
+class ChunkingConfig:
+    """Chunking configuration settings"""
+    max_tokens_per_chunk: int = int(os.getenv("MAX_TOKENS_PER_CHUNK", "450"))
+    overlap_tokens: int = int(os.getenv("OVERLAP_TOKENS", "50"))
 
 @dataclass
 class AppConfig:
@@ -91,6 +96,7 @@ class Config:
         self.openai = OpenAIConfig()
         self.adobe = AdobeConfig()
         self.processing = ProcessingConfig()
+        self.chunking = ChunkingConfig()
         self.app = AppConfig()
     
     def validate(self) -> bool:
@@ -141,4 +147,5 @@ ADOBE_CLIENT_SECRET = config.adobe.client_secret
 MAX_PARA_LENGTH = config.processing.max_paragraph_length
 OLLAMA_MODEL = config.ollama.model
 CHUNK_SIZE = config.processing.chunk_size
-CURRENT_CHUNK_SIZE = 300
+CURRENT_MAX_TOKENS = config.chunking.max_tokens_per_chunk
+CURRENT_OVERLAP_TOKENS = config.chunking.overlap_tokens

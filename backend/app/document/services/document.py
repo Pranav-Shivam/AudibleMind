@@ -182,13 +182,13 @@ class DocumentService:
             })
             
             # Use PDFChunker for page-level chunking with improved semantic chunking
-            chunker = PDFChunker(max_tokens_per_chunk=500, overlap_tokens=20)
+            chunker = PDFChunker(max_tokens_per_chunk=CURRENT_MAX_TOKENS, overlap_tokens=CURRENT_OVERLAP_TOKENS)
             pdf_chunks = chunker.process_multiple_pages(pages_text_data, document_id)
             
             # Convert chunker format to our existing format, filtering out empty chunks
             chunks = []
             chunk_index = 0
-            max_allowed_tokens = 500  # Slightly higher than chunker's 450 for safety
+            max_allowed_tokens = CURRENT_MAX_TOKENS  # Slightly higher than chunker's 450 for safety
             skipped_empty = 0
             skipped_oversized = 0
             
@@ -215,6 +215,7 @@ class DocumentService:
                 
                 # Only include chunks with actual content (be more lenient with minimum length)
                 content = chunk.get('content', '').strip()
+                
                 if content and len(content) >= 10:  # Minimum 10 characters for a valid chunk
                     token_count = chunk.get('token_count', 0)
                     
@@ -240,7 +241,53 @@ class DocumentService:
                 else:
                     logger.debug(f"⏭️ Skipping chunk with insufficient content: {chunk.get('id', 'Unknown')} (length: {len(content)})")
                     skipped_empty += 1
-            
+            # Merge adjacent chunks so sentences end cleanly
+            def _ends_with_sentence(text: str) -> bool:
+                if not text:
+                    return True
+                t = text.rstrip()
+                if not t:
+                    return True
+                closers = '\'"”’)]}'
+                sentence_enders = '.!?…'
+                i_ptr = len(t) - 1
+                # Skip trailing whitespace
+                while i_ptr >= 0 and t[i_ptr].isspace():
+                    i_ptr -= 1
+                # Skip closing punctuation/brackets/quotes
+                while i_ptr >= 0 and t[i_ptr] in closers:
+                    i_ptr -= 1
+                return i_ptr >= 0 and t[i_ptr] in sentence_enders
+
+            merged_chunks = []
+            i_ptr = 0
+            while i_ptr < len(chunks):
+                base = chunks[i_ptr]
+                merged_content = base['content']
+                merged_tokens = base.get('token_count', 0)
+                first_page_number = base.get('page_number', 0)
+
+                j_ptr = i_ptr
+                while not _ends_with_sentence(merged_content) and (j_ptr + 1) < len(chunks):
+                    nxt = chunks[j_ptr + 1]
+                    merged_content = (merged_content + " " + nxt['content']).strip()
+                    merged_tokens += nxt.get('token_count', 0)
+                    j_ptr += 1
+
+                merged_chunks.append({
+                    'content': merged_content,
+                    'token_count': merged_tokens,
+                    'page_number': first_page_number,
+                    'document_id': document_id
+                })
+                i_ptr = j_ptr + 1
+
+            # Re-index sequentially after merge
+            for idx, ch in enumerate(merged_chunks):
+                ch['chunk_index'] = idx
+
+            chunks = merged_chunks
+
             logger.info(f"📊 Chunk processing summary", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
@@ -282,6 +329,7 @@ class DocumentService:
             
             # Prepare in-memory list for chunks
             chunk_models = []
+            
 
             # 1️⃣ Build ChunkModel instances in memory
             for chunk_data in chunks:
@@ -311,7 +359,8 @@ class DocumentService:
             for i in range(0, len(chunk_models), 4):
                 group = chunk_models[i:i+4]
                 bundle_text = "\n".join([c.content for c in group])
-                bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
+                # bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
+                bundle_summary = bundle_text
                 bundle_id = generate_uid()
 
                 # Create and save BundleModel immediately
