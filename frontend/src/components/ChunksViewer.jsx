@@ -347,6 +347,29 @@ const ChunksViewer = () => {
       ),
     },
     {
+      title: "Page",
+      dataIndex: "page_number",
+      width: isMobile ? 70 : 90,
+      align: "center",
+      sorter: (a, b) => (a.page_number || 0) - (b.page_number || 0),
+      render: (page) => (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          backgroundColor: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-subtle)',
+          fontSize: 'var(--text-xs)',
+          color: 'var(--color-text-secondary)'
+        }}>
+          <FileTextOutlined style={{ color: 'var(--color-primary)' }} />
+          <span>Page {page ?? 0}</span>
+        </div>
+      ),
+    },
+    {
       title: "Status",
       dataIndex: "is_user_liked",
       width: isMobile ? 80 : 120,
@@ -611,9 +634,11 @@ const ChunksViewer = () => {
           flexDirection: 'column',
           minHeight: 0,
           overflow: 'hidden',
-          position: 'relative'
+          position: 'relative',
+          className: '!h-[100%]'
         }}>
           <ProTable
+            className="[&_.ant-spin-container]:!h-[100%] [&_.ant-spin-container_.ant-table]:!h-[90%] [&_.ant-spin-container_.ant-pagination]:!h-[10%]"
             rowKey="id"
             columns={columns}
             dataSource={chunks}

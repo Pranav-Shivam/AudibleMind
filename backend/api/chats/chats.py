@@ -162,17 +162,19 @@ async def generate_conversation(
         # Pretty-print supplied bundle info (if any) and document identifier
         print("--------------------------------")
         if request.bundle_id or request.bundle_text or request.bundle_index is not None:
-            print("Bundle Information:")
-            if request.bundle_id:
-                print(f"  • Bundle ID   : {request.bundle_id}")
-            if request.bundle_index is not None:
-                print(f"  • Bundle Index: {request.bundle_index}")
-            if request.bundle_text:
-                print(f"  • Bundle Text : {request.bundle_text}")
+            logger.info("📦 Bundle Information:", extra={
+                "request_id": request_id,
+                "bundle_id": request.bundle_id,
+                "bundle_index": request.bundle_index,
+                # "has_bundle_text": bool(request.bundle_text)
+            })
         else:
-            print("No bundle information supplied.")
-        
-        print(f"Document ID: {request.document_id or 'N/A'}")
+            logger.info("📦 No bundle information supplied", extra={"request_id": request_id})
+
+        logger.info("📄 Document Information", extra={
+            "request_id": request_id,
+            "document_id": request.document_id or "N/A"
+        })
         print("--------------------------------")
         
         logger.info(f"📝 Processing paragraph", extra={

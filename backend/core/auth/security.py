@@ -12,7 +12,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # JWT settings
 SECRET_KEY = config.app.jwt_secret_key
 ALGORITHM = config.app.jwt_algorithm
-ACCESS_TOKEN_EXPIRE_MINUTES = config.app.access_token_expire_minutes * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = config.app.access_token_expire_minutes  # minutes
 
 
 class PasswordUtils:

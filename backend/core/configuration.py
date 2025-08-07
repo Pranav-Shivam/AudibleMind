@@ -31,7 +31,7 @@ class ServerConfig:
 @dataclass
 class OllamaConfig:
     """Ollama configuration settings"""
-    model: str = os.getenv("OLLAMA_MODEL", "tinyllama:chat") #ollama pull tinyllama:chat
+    model: str = os.getenv("OLLAMA_MODEL", "llama3.2:latest") #ollama pull tinyllama:chat
     temperature: float = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
     max_tokens: int = int(os.getenv("OLLAMA_MAX_TOKENS", "1000"))
     top_p: float = float(os.getenv("OLLAMA_TOP_P", "0.9"))

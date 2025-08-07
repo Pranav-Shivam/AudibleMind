@@ -2,6 +2,7 @@ import { CloseOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import '../styles/Chat.css';
 import { Button, Input, ToastNotification } from './shared';
+import { API_URL } from '../services/apiUrl';
 
 
 const ExportIcon = () => (
