@@ -1,0 +1,211 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.6 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36" version="28.0.6">
+  <diagram id="prechunk" name="Pre-Chunking Flow">
+    <mxGraphModel dx="1665" dy="841" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n_start" value="Adobe extraction done (data ready per page)" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="80" y="60" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_build_pages" value="Build pages_text_data (DocumentService)&#xa;- Concatenate text per page from extracted elements&#xa;- Ignore empty/whitespace-only" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="380" y="40" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_init_chunker" value="Init PDFChunker(max_tokens, overlap)&#xa;- Parameters control semantic split and context overlap" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="780" y="40" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_for_each_page" value="For each page → process_pdf_text_by_page" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="1180" y="40" width="360" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_clean_text" value="Clean text (clean_text)&#xa;- Remove &#39;Page #: &#39;&#xa;- Normalize whitespace/newlines&#xa;- Normalize bullets" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="20" width="420" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n_detect_headings" value="Detect headings → sections (detect_headings)&#xa;- Numbered (1, 1.1, 1.1.1) or ALL CAPS lines&#xa;- Level = number of dots + 1&#xa;- Builds ordered sections" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="170" width="420" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="d_headings_found" value="Headings found?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="310" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_default_section" value="No headings → Create default single section&#xa;- Title: &#39;Document Content&#39;&#xa;- All text becomes one section" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="1870" y="300" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n_for_each_section" value="For each section → create_semantic_chunks" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="450" width="420" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_detect_paragraphs" value="Detect paragraphs (detect_paragraphs)&#xa;- Split on double newlines&#xa;- If few: split by bullets/numbered lists&#xa;- Else: group sentences by length (~800 chars)&#xa;- Filter paragraphs with length &gt; 15 chars&#xa;- Fallback: 1 paragraph if all filtered" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="540" width="460" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="d_few_paras" value="Paragraphs ≤ 2?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="700" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_split_bullets" value="Split by bullets/numbered list&#xa;- Patterns like &#39;•&#39;, &#39;-&#39;, &#39;*&#39;, &#39;1.&#39;, &#39;2.&#39; ..." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="1350" y="820" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d_still_few" value="Still ≤ 2?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1410" y="920" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_group_sentences" value="Group sentences by length (fallback)&#xa;- Merge sentences up to ~800 chars" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1210" y="1020" width="360" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_filter_short" value="Filter short paragraphs (len ≤ 15)&#xa;- Preserve content quality" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1680" y="820" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d_all_filtered" value="All filtered?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="920" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_fallback_single_para" value="Fallback: Use original text as a single paragraph" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="1020" width="360" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_for_each_paragraph" value="For each paragraph" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="700" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d_tokens_le_max" value="Tokens ≤ max_tokens?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="780" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_create_paragraph_chunk" value="Yes → Create chunk (type=paragraph)&#xa;- Store lang, position, token_count" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="2220" y="760" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_split_semantically" value="No → Split at sentence boundaries&#xa;- Greedy add sentences until max_tokens&#xa;- Title suffix: &#39;Part i&#39;&#xa;- Create chunk(s) type=sentence_group" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="2220" y="880" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d_more_than_one_chunk" value="More than 1 chunk?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="980" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_apply_overlap" value="Apply controlled overlap (if needed)&#xa;- Prepend tail sentences of previous chunk&#xa;- Limit by overlap_tokens&#xa;- Skip if duplicate with current" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="2220" y="1010" width="380" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n_remove_duplicates" value="Remove duplicate content&#xa;- Similarity &gt; 0.8 → drop chunk&#xa;- Keeps last 2 for comparison window" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="1100" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_emit_section_header" value="Emit section header chunk&#xa;- type=section, is_empty=true&#xa;- Add page_number, document_id" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1600" y="1120" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_aggregate_pages" value="Aggregate all page chunks (process_multiple_pages)&#xa;- Sort by page and position&#xa;- Assign global_position" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1180" y="1160" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_service_convert" value="Convert to service chunks (DocumentService)&#xa;- Skip is_empty&#xa;- Keep content len ≥ 10&#xa;- If tokens &gt; max: warn, still keep&#xa;- Assign sequential chunk_index" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="780" y="1160" width="360" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="d_ends_sentence" value="Ends with sentence?" style="rhombus;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="420" y="1180" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_merge_forward" value="No → Merge with next until sentence end (., !, ?)&#xa;- Ignore trailing closers: quotes/brackets&#xa;- Re-sum tokens, keep first page_number&#xa;- Re-index" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="60" y="1280" width="520" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n_stable" value="Stable chunks ready (not mutated further)" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="420" y="1080" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_persist" value="Persist chunks &amp; create bundles (post pre-chunking)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="420" y="1000" width="320" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_start" target="n_build_pages" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_build_pages" target="n_init_chunker" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_init_chunker" target="n_for_each_page" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_for_each_page" target="n_clean_text" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_clean_text" target="n_detect_headings" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;align=left;verticalAlign=top;" parent="1" source="n_detect_headings" target="d_headings_found" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_headings_found" target="n_default_section" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_headings_found" target="n_for_each_section" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_default_section" target="n_for_each_section" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_for_each_section" target="n_detect_paragraphs" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_detect_paragraphs" target="d_few_paras" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_few_paras" target="n_split_bullets" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="Then" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_split_bullets" target="d_still_few" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="Yes (still few)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_still_few" target="n_group_sentences" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_few_paras" target="n_filter_short" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="Filter result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_group_sentences" target="n_filter_short" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_filter_short" target="d_all_filtered" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" value="Yes (all filtered)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_all_filtered" target="n_fallback_single_para" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="d_all_filtered" target="n_for_each_paragraph" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" value="From fallback" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_fallback_single_para" target="n_for_each_paragraph" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_for_each_paragraph" target="d_tokens_le_max" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_tokens_le_max" target="n_create_paragraph_chunk" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_tokens_le_max" target="n_split_semantically" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_create_paragraph_chunk" target="d_more_than_one_chunk" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_split_semantically" target="d_more_than_one_chunk" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e26" value="Yes (&gt;1)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_more_than_one_chunk" target="n_apply_overlap" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e27" value="No (1)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_more_than_one_chunk" target="n_remove_duplicates" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e28" value="Then" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="n_apply_overlap" target="n_remove_duplicates" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_remove_duplicates" target="n_emit_section_header" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_emit_section_header" target="n_aggregate_pages" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_aggregate_pages" target="n_service_convert" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_service_convert" target="d_ends_sentence" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e33" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_ends_sentence" target="n_merge_forward" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="d_ends_sentence" target="n_stable" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e35" value="After merge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;labelBackgroundColor=#ffffff;" parent="1" source="n_merge_forward" target="n_stable" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e36" value="(post pre-chunking)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=none;" parent="1" source="n_stable" target="n_persist" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

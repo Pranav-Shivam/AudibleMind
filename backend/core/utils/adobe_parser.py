@@ -109,7 +109,8 @@ def read_csv_table(path, table_number):
             data = file.read()
         return data
     except:
-        return []
+        # Return empty string to avoid type errors during string concatenation
+        return ""
 
 
 def is_header(path, level=False):

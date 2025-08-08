@@ -1,6 +1,6 @@
 from core.db.couch_conn import CouchDBConnection
 from core.configuration import *
-from core.utils.helper import generate_uid
+from core.utils.helper import generate_uid, clean_text
 from core.utils.pdf_extraction_utils import extract_pdf_using_adobe, extract_pdf_by_pages, process_page_content
 from core.utils.adobe_parser import adjust_para_tokens
 from core.utils.pdf_chunking import PDFChunker
@@ -15,6 +15,7 @@ import os
 from typing import Dict, List
 from app.document.services.models import ChunkResponse
 from core.utils.global_utils import GlobalUtils
+from concurrent.futures import ThreadPoolExecutor
 
 class DocumentService:
     def __init__(self):
@@ -353,6 +354,11 @@ class DocumentService:
                     bundle_summary=""
                 )
                 chunk_models.append(model)
+            # # 3️⃣ Run in parallel
+            # max_workers = MAX_WORKERS
+            # print(f"🔍 Max workers: {max_workers} and type: {type(max_workers)}")
+            # with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            #     chunk_models = list(executor.map(self.process_chunk, chunk_models))
 
             # 2️⃣ Build bundles and update chunks, then persist bundles on the fly
             bundle_index = 1
@@ -455,6 +461,18 @@ class DocumentService:
                 "duration": total_duration
             })
             raise
+    
+    def process_chunk(self, chunk):
+        live_content = chunk.content
+        result = clean_text(live_content)
+        logger.info(f"🔍 Processed chunk", extra={
+            "chunk_id": chunk.id,
+            "chunk_index": chunk.chunk_index,
+            "previous_content_length": len(live_content),
+            "content_length": len(result)
+        })
+        chunk.content = result  # update in memory
+        return chunk
 
     def get_document_chunks(self, document_id):
         """Get all chunks for a document"""

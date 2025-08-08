@@ -624,6 +624,7 @@ class PDFChunker:
         logger.info(f"🧹 Step 1: Cleaning page text")
         cleaned_text = self.clean_text(page_text)
         
+        
         # Step 2: Detect headings and sections for this page
         logger.info(f"🔍 Step 2: Detecting headings and sections for page {page_number}")
         sections = self.detect_headings(cleaned_text)

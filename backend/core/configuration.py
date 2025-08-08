@@ -77,6 +77,7 @@ class AppConfig:
     rate_limit_per_minute: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     log_file: str = os.getenv("LOG_FILE", "app.log")
+    max_workers: int = int(os.getenv("MAX_WORKERS", "4"))
     
     # Authentication settings
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "7590598dcebdfd73a808a37e97a01ae5cd19e7bdb9b4838243fc7c10e33b3a6c")
@@ -149,3 +150,4 @@ OLLAMA_MODEL = config.ollama.model
 CHUNK_SIZE = config.processing.chunk_size
 CURRENT_MAX_TOKENS = config.chunking.max_tokens_per_chunk
 CURRENT_OVERLAP_TOKENS = config.chunking.overlap_tokens
+MAX_WORKERS = config.app.max_workers
