@@ -50,7 +50,7 @@ const ChunkTooltip = ({ content, isVisible, position }) => {
 const ChatWithChunkContent = ({ chunkContent, onClose }) => {
   return (
     <div className="chat-wrapper">
-      <Chat initialParagraph={chunkContent} />
+      <Chat initialParagraph={chunkContent} onClose={onClose} />
     </div>
   );
 };

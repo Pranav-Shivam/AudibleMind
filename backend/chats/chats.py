@@ -154,7 +154,7 @@ class OpenAIClient(LLMClient):
 class OllamaConnector:
     def __init__(self, model_name: str = None):
         # self.model_name = model_name or config.ollama.model
-        self.model_name = "tinyllama:chat"
+        self.model_name = config.ollama.model
         logger.info(f"🦙 Initializing Ollama connector with model: {self.model_name}")
         
         try:

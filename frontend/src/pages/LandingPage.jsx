@@ -142,84 +142,11 @@ const LandingPage = () => {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: 'calc(100vh - 64px)', // Account for NavBar height
       display: 'flex',
       flexDirection: 'column',
       background: 'linear-gradient(135deg, var(--color-primary-subtle) 0%, white 50%, var(--color-surface-secondary) 100%)'
     }}>
-      {/* Header */}
-      <header style={{
-        flexShrink: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--color-border-subtle)',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{
-          maxWidth: '80rem',
-          margin: '0 auto',
-          padding: '0 var(--spacing-4)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '48px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                background: 'var(--gradient-primary)',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{
-                  color: 'white',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-bold)'
-                }}>📄</span>
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--color-text-primary)'
-                }}>ShiruVox</h1>
-                <p style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--color-text-secondary)'
-                }}>Turning Research into Resonance</p>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-4)'
-            }}>
-              <span style={{
-                display: isMobile ? 'none' : 'inline-flex',
-                alignItems: 'center',
-                padding: 'var(--spacing-1) var(--spacing-3)',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--color-primary-subtle)',
-                color: 'var(--color-primary)',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--font-weight-medium)'
-              }}>
-                🚀 Transform Your Documents with AI
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main style={{
         flex: 1,
@@ -516,95 +443,6 @@ const LandingPage = () => {
             </div>
           )}
         </Card>
-
-        {/* Features Section */}
-        <div style={{
-          padding: isMobile ? 'var(--spacing-2) 0' : 'var(--spacing-3) 0',
-          borderTop: '1px solid var(--color-border-subtle)',
-          marginTop: 'auto'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: isMobile ? 'var(--spacing-3)' : 'var(--spacing-6)',
-            flexWrap: 'wrap'
-          }}>
-            {[
-              {
-                icon: '⚡',
-                title: 'Lightning Fast',
-                description: 'AI-powered summaries in seconds'
-              },
-              {
-                icon: '🧠',
-                title: 'Smart Analysis',
-                description: 'Advanced context understanding'
-              },
-              {
-                icon: '⚙️',
-                title: 'Customizable',
-                description: 'Tailor to your specific needs'
-              },
-              {
-                icon: '🔒',
-                title: 'Secure & Private',
-                description: 'Enterprise-grade encryption'
-              }
-            ].map((feature, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface-secondary)',
-                  transition: 'all var(--transition-normal)',
-                  cursor: 'pointer',
-                  minWidth: isMobile ? '140px' : '160px',
-                  justifyContent: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.backgroundColor = 'var(--color-surface-primary)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <span style={{
-                  fontSize: isMobile ? 'var(--text-lg)' : 'var(--text-xl)',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-                  transition: 'transform var(--transition-normal)'
-                }}>
-                  {feature.icon}
-                </span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: '1px'
-                  }}>
-                    {feature.title}
-                  </div>
-                  <div style={{
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.2
-                  }}>
-                    {feature.description}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </main>
 
       {/* Toast Notifications */}

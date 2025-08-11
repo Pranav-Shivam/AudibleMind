@@ -40,7 +40,7 @@ import '../styles/ContentViewer.css';
 
 const { Title, Paragraph, Text } = Typography;
 
-const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
+const AudibleMindChunk = ({ chunk, onAudioCreated }) => {
   const { message } = App.useApp();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -188,7 +188,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
       // Call text-to-speech API
       const audioBlob = await audioApi.textToSpeech(
         chunk.content, 
-        `${chunk.heading || 'shiruvox-content'}.wav`
+        `${chunk.heading || 'audiblemind-content'}.wav`
       );
       
       // Validate the blob
@@ -538,8 +538,8 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
   };
 
   return (
-    <div className="shiruvox-container">
-      <Card className="shiruvox-card">
+            <div className="audiblemind-container">
+              <Card className="audiblemind-card">
 
         {/* Enhanced Header */}
         <div className="header-section">
@@ -556,11 +556,11 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
             
             <div className="content-info">
               <Title level={3} className="content-title">
-                {chunk.heading || 'ShiruVox Content'}
+                {chunk.heading || 'AudibleMind Content'}
               </Title>
               <div className="content-meta">
                 <Text className="author-text">
-                  <RobotOutlined /> ShiruVox AI
+                  <RobotOutlined /> AudibleMind AI
                 </Text>
                 <span className="meta-separator">•</span>
                 <Text className="word-count">{chunk.number_of_words || 0} words</Text>
@@ -584,7 +584,7 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
           <div className={`media-placeholder ${isPlaying ? 'playing' : ''}`}>
             <div className="media-content">
               <div className="media-title">
-                {chunk.heading || 'ShiruVox Content'}
+                {chunk.heading || 'AudibleMind Content'}
               </div>
               {isPlaying && (
                 <div className="audio-visualizer">
@@ -820,4 +820,4 @@ const ShiruVoxChunk = ({ chunk, onAudioCreated }) => {
   );
 };
 
-export default ShiruVoxChunk;
+export default AudibleMindChunk;

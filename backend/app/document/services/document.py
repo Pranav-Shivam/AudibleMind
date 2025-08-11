@@ -1,6 +1,6 @@
 from core.db.couch_conn import CouchDBConnection
 from core.configuration import *
-from core.utils.helper import generate_uid
+from core.utils.helper import generate_uid, clean_text
 from core.utils.pdf_extraction_utils import extract_pdf_using_adobe, extract_pdf_by_pages, process_page_content
 from core.utils.adobe_parser import adjust_para_tokens
 from core.utils.pdf_chunking import PDFChunker
@@ -15,6 +15,7 @@ import os
 from typing import Dict, List
 from app.document.services.models import ChunkResponse
 from core.utils.global_utils import GlobalUtils
+from concurrent.futures import ThreadPoolExecutor
 
 class DocumentService:
     def __init__(self):
@@ -35,7 +36,7 @@ class DocumentService:
             "chunk_db": COUCH_CHUNK_DB_NAME
         })
         
-    def upload_file(self, user_prompt, file):
+    def upload_file(self, user_prompt, file, user_id=None):
         """Process and upload a PDF file with comprehensive logging using page-level chunking"""
         start_time = time.time()
         upload_id = f"upload_{int(start_time * 1000)}"
@@ -73,6 +74,7 @@ class DocumentService:
                                       title=title,
                                       file_extension=file_extension,
                                       created_at=datetime.now(),
+                                      user_id=user_id or "anonymous"
                                       )
 
             document_id = self.couch_client.save_to_db(COUCH_DOCUMENT_DB_NAME, doc_model)
@@ -121,61 +123,116 @@ class DocumentService:
             
             # Convert page-grouped data to text format for each page
             pages_text_data = {}
+            total_text_extracted = 0
+            
             for page_num, page_elements in page_grouped_data.items():
                 page_text = ""
+                elements_processed = 0
+                
                 for item in page_elements:
-                    if 'text' in item:
-                        page_text += f"{item['text']}\n"
-                pages_text_data[page_num] = page_text
+                    if 'text' in item and item['text'].strip():
+                        page_text += f"{item['text'].strip()}\n"
+                        elements_processed += 1
+                    elif isinstance(item, dict):
+                        # Handle different text field names that might be used
+                        for text_field in ['Text', 'content', 'text']:
+                            if text_field in item and item[text_field] and item[text_field].strip():
+                                page_text += f"{item[text_field].strip()}\n"
+                                elements_processed += 1
+                                break
+                
+                if page_text.strip():
+                    pages_text_data[page_num] = page_text.strip()
+                    total_text_extracted += len(page_text)
+                    
+                logger.debug(f"📄 Page {page_num} processed", extra={
+                    "elements_in_page": len(page_elements),
+                    "elements_processed": elements_processed,
+                    "page_text_length": len(page_text),
+                    "has_text": bool(page_text.strip())
+                })
             
             para_process_duration = (time.time() - para_process_start) * 1000
             logger.info(f"📝 Pages processed for chunking", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
                 "pages_count": len(pages_text_data),
+                "pages_with_text": len([p for p in pages_text_data.values() if p.strip()]),
                 "process_duration": round(para_process_duration, 2),
-                "total_text_length": sum(len(text) for text in pages_text_data.values())
+                "total_text_length": total_text_extracted,
+                "sample_text": list(pages_text_data.values())[0][:200] + "..." if pages_text_data else "No text found"
             })
 
+            # Check if we have any text to process
+            if not pages_text_data or total_text_extracted == 0:
+                logger.error(f"❌ No text extracted from PDF", extra={
+                    "upload_id": upload_id,
+                    "document_id": document_id,
+                    "pages_count": len(page_grouped_data),
+                    "elements_total": sum(len(elements) for elements in page_grouped_data.values()) if page_grouped_data else 0
+                })
+                raise ValueError("No text could be extracted from the PDF. The document may be image-based or corrupted.")
+            
             # Create chunks using page-level PDFChunker
             chunk_start = time.time()
             logger.info(f"✂️ Creating page-level intelligent chunks using PDFChunker", extra={
                 "upload_id": upload_id,
                 "document_id": document_id,
-                "pages_count": len(pages_text_data)
+                "pages_count": len(pages_text_data),
+                "text_length": total_text_extracted
             })
             
             # Use PDFChunker for page-level chunking with improved semantic chunking
-            chunker = PDFChunker(max_tokens_per_chunk=500, overlap_tokens=20)
+            chunker = PDFChunker(max_tokens_per_chunk=CURRENT_MAX_TOKENS, overlap_tokens=CURRENT_OVERLAP_TOKENS)
             pdf_chunks = chunker.process_multiple_pages(pages_text_data, document_id)
             
             # Convert chunker format to our existing format, filtering out empty chunks
             chunks = []
             chunk_index = 0
-            max_allowed_tokens = 500  # Slightly higher than chunker's 450 for safety
+            max_allowed_tokens = CURRENT_MAX_TOKENS  # Slightly higher than chunker's 450 for safety
+            skipped_empty = 0
+            skipped_oversized = 0
             
-            for chunk in pdf_chunks:
+            logger.info(f"🔍 Processing {len(pdf_chunks)} raw chunks from PDFChunker", extra={
+                "upload_id": upload_id,
+                "document_id": document_id,
+                "raw_chunks_count": len(pdf_chunks)
+            })
+            
+            for i, chunk in enumerate(pdf_chunks):
+                logger.debug(f"🔍 Processing chunk {i+1}/{len(pdf_chunks)}", extra={
+                    "chunk_id": chunk.get('id', 'Unknown'),
+                    "is_empty": chunk.get('is_empty', False),
+                    "content_length": len(chunk.get('content', '')),
+                    "token_count": chunk.get('token_count', 0),
+                    "content_preview": chunk.get('content', '')[:100] + "..." if len(chunk.get('content', '')) > 100 else chunk.get('content', '')
+                })
+                
                 # Skip empty section headers
                 if chunk.get('is_empty', False):
                     logger.debug(f"⏭️ Skipping empty section chunk: {chunk.get('title', 'Unknown')}")
+                    skipped_empty += 1
                     continue
                 
-                # Only include chunks with actual content
-                if chunk.get('content', '').strip():
-                    token_count = chunk['token_count']
+                # Only include chunks with actual content (be more lenient with minimum length)
+                content = chunk.get('content', '').strip()
+                
+                if content and len(content) >= 10:  # Minimum 10 characters for a valid chunk
+                    token_count = chunk.get('token_count', 0)
                     
-                    # Validate token count
+                    # Validate token count but be more lenient
                     if token_count > max_allowed_tokens:
-                        logger.warning(f"⚠️ Chunk exceeds token limit: {token_count} > {max_allowed_tokens}", extra={
+                        logger.warning(f"⚠️ Chunk exceeds token limit but including anyway: {token_count} > {max_allowed_tokens}", extra={
                             "upload_id": upload_id,
                             "document_id": document_id,
                             "chunk_id": chunk.get('id', 'Unknown'),
                             "page_number": chunk.get('page_number', 'Unknown'),
-                            "content_preview": chunk['content'][:100] + "..." if len(chunk['content']) > 100 else chunk['content']
+                            "content_preview": content[:100] + "..." if len(content) > 100 else content
                         })
+                        skipped_oversized += 1
                     
                     chunks.append({
-                        'content': chunk['content'],
+                        'content': content,
                         'token_count': token_count,
                         'chunk_index': chunk_index,  # Use sequential indexing
                         'page_number': chunk.get('page_number', 0),  # Add page number
@@ -183,7 +240,63 @@ class DocumentService:
                     })
                     chunk_index += 1
                 else:
-                    logger.debug(f"⏭️ Skipping chunk with empty content: {chunk.get('id', 'Unknown')}")
+                    logger.debug(f"⏭️ Skipping chunk with insufficient content: {chunk.get('id', 'Unknown')} (length: {len(content)})")
+                    skipped_empty += 1
+            # Merge adjacent chunks so sentences end cleanly
+            def _ends_with_sentence(text: str) -> bool:
+                if not text:
+                    return True
+                t = text.rstrip()
+                if not t:
+                    return True
+                closers = '\'"”’)]}'
+                sentence_enders = '.!?…'
+                i_ptr = len(t) - 1
+                # Skip trailing whitespace
+                while i_ptr >= 0 and t[i_ptr].isspace():
+                    i_ptr -= 1
+                # Skip closing punctuation/brackets/quotes
+                while i_ptr >= 0 and t[i_ptr] in closers:
+                    i_ptr -= 1
+                return i_ptr >= 0 and t[i_ptr] in sentence_enders
+
+            merged_chunks = []
+            i_ptr = 0
+            while i_ptr < len(chunks):
+                base = chunks[i_ptr]
+                merged_content = base['content']
+                merged_tokens = base.get('token_count', 0)
+                first_page_number = base.get('page_number', 0)
+
+                j_ptr = i_ptr
+                while not _ends_with_sentence(merged_content) and (j_ptr + 1) < len(chunks):
+                    nxt = chunks[j_ptr + 1]
+                    merged_content = (merged_content + " " + nxt['content']).strip()
+                    merged_tokens += nxt.get('token_count', 0)
+                    j_ptr += 1
+
+                merged_chunks.append({
+                    'content': merged_content,
+                    'token_count': merged_tokens,
+                    'page_number': first_page_number,
+                    'document_id': document_id
+                })
+                i_ptr = j_ptr + 1
+
+            # Re-index sequentially after merge
+            for idx, ch in enumerate(merged_chunks):
+                ch['chunk_index'] = idx
+
+            chunks = merged_chunks
+
+            logger.info(f"📊 Chunk processing summary", extra={
+                "upload_id": upload_id,
+                "document_id": document_id,
+                "raw_chunks": len(pdf_chunks),
+                "valid_chunks": len(chunks),
+                "skipped_empty": skipped_empty,
+                "skipped_oversized": skipped_oversized
+            })
             
             # Final validation
             oversized_chunks = [chunk for chunk in chunks if chunk['token_count'] > max_allowed_tokens]
@@ -217,6 +330,7 @@ class DocumentService:
             
             # Prepare in-memory list for chunks
             chunk_models = []
+            
 
             # 1️⃣ Build ChunkModel instances in memory
             for chunk_data in chunks:
@@ -240,13 +354,19 @@ class DocumentService:
                     bundle_summary=""
                 )
                 chunk_models.append(model)
+            # # 3️⃣ Run in parallel
+            # max_workers = MAX_WORKERS
+            # print(f"🔍 Max workers: {max_workers} and type: {type(max_workers)}")
+            # with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            #     chunk_models = list(executor.map(self.process_chunk, chunk_models))
 
             # 2️⃣ Build bundles and update chunks, then persist bundles on the fly
             bundle_index = 1
             for i in range(0, len(chunk_models), 4):
                 group = chunk_models[i:i+4]
                 bundle_text = "\n".join([c.content for c in group])
-                bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
+                # bundle_summary = self.document_summarizer.get_bundle_summary(bundle_text)
+                bundle_summary = bundle_text
                 bundle_id = generate_uid()
 
                 # Create and save BundleModel immediately
@@ -341,40 +461,66 @@ class DocumentService:
                 "duration": total_duration
             })
             raise
+    
+    def process_chunk(self, chunk):
+        live_content = chunk.content
+        result = clean_text(live_content)
+        logger.info(f"🔍 Processed chunk", extra={
+            "chunk_id": chunk.id,
+            "chunk_index": chunk.chunk_index,
+            "previous_content_length": len(live_content),
+            "content_length": len(result)
+        })
+        chunk.content = result  # update in memory
+        return chunk
 
     def get_document_chunks(self, document_id):
         """Get all chunks for a document"""
         try:
+            logger.info(f"🔍 Searching for chunks with document_id: {document_id}")
+            
             # Get all chunk documents for this document_id
             chunk_db = self.couch_client.get_db(COUCH_CHUNK_DB_NAME)
             
             # Query by document_id (we'll need to iterate through all docs)
             response_chunks = []
+            total_docs_checked = 0
+            matching_docs_found = 0
+            
             for doc_id in chunk_db:
+                total_docs_checked += 1
                 try:
                     chunk_doc = chunk_db[doc_id]
-                    if chunk_doc.get('document_id') == document_id:
+                    stored_document_id = chunk_doc.get('document_id', '')
+                    
+                    # Debug logging for document ID comparison
+                    if total_docs_checked <= 5:  # Only log first few for debugging
+                        logger.debug(f"🔍 Checking chunk {doc_id}: stored_document_id='{stored_document_id}', searching_for='{document_id}', match={stored_document_id == document_id}")
+                    
+                    if stored_document_id == document_id:
+                        matching_docs_found += 1
                         
                         current_chunk = ChunkResponse(
                             id=chunk_doc['_id'],
-                            chunk_index=chunk_doc['chunk_index'],
-                            content=chunk_doc['content'],
-                            summary=chunk_doc['summary'],
-                            token_count=chunk_doc['token_count'],
-                            page_number=chunk_doc['page_number'],
-                            number_of_words=chunk_doc['number_of_words'],
-                            is_user_liked=chunk_doc['is_user_liked'],
-                            heading=chunk_doc['heading'],
-                            created_at=chunk_doc['created_at'],
-                            updated_at=chunk_doc['updated_at'],
-                            bundle_index=chunk_doc['bundle_index'],
-                            bundle_id=chunk_doc['bundle_id'],
-                            bundle_text=chunk_doc['bundle_text'],
-                            bundle_summary=chunk_doc['bundle_summary']
+                            chunk_index=chunk_doc.get('chunk_index', 0),
+                            content=chunk_doc.get('content', ''),
+                            summary=chunk_doc.get('summary', ''),
+                            token_count=chunk_doc.get('token_count', 0),
+                            page_number=chunk_doc.get('page_number', 0),
+                            number_of_words=chunk_doc.get('number_of_words', 0),
+                            is_user_liked=chunk_doc.get('is_user_liked', False),
+                            heading=chunk_doc.get('heading', ''),
+                            created_at=chunk_doc.get('created_at', ''),
+                            updated_at=chunk_doc.get('updated_at', ''),
+                            bundle_index=chunk_doc.get('bundle_index', 0),
+                            bundle_id=chunk_doc.get('bundle_id', ''),
+                            bundle_text=chunk_doc.get('bundle_text', ''),
+                            bundle_summary=chunk_doc.get('bundle_summary', '')
                         )
                         response_chunks.append(current_chunk)
+                        
                 except Exception as e:
-                    logger.warning(f"⚠️ Skipping invalid chunk document: {doc_id}")
+                    logger.warning(f"⚠️ Skipping invalid chunk document {doc_id}: {str(e)}")
                     continue
             
             # Sort by chunk_index to ensure proper order
@@ -382,8 +528,25 @@ class DocumentService:
             
             logger.info(f"📦 Retrieved chunks for document {document_id}", extra={
                 "document_id": document_id,
-                "chunks_found": len(response_chunks)
+                "chunks_found": len(response_chunks),
+                "total_docs_checked": total_docs_checked,
+                "matching_docs_found": matching_docs_found
             })
+            
+            # If no chunks found, log additional debug info
+            if len(response_chunks) == 0:
+                logger.warning(f"🚨 No chunks found for document {document_id}. Checked {total_docs_checked} total chunk documents, found {matching_docs_found} matches.")
+                
+                # Check if document exists in documents database
+                try:
+                    doc_db = self.couch_client.get_db(COUCH_DOCUMENT_DB_NAME)
+                    doc = doc_db.get(document_id)
+                    if doc:
+                        logger.warning(f"📄 Document {document_id} exists in documents DB but has no chunks. Title: {doc.get('title', 'Unknown')}")
+                    else:
+                        logger.error(f"❌ Document {document_id} not found in documents DB either!")
+                except Exception as doc_check_error:
+                    logger.error(f"❌ Error checking document existence: {str(doc_check_error)}")
             
             return response_chunks
             
@@ -637,12 +800,13 @@ class DocumentService:
             })
             
             # Prepare response
+            summary = document_doc.get('file_summary') or 'Summary not available'
             response = {
                 'id': document_id,
                 'title': document_doc.get('title', 'Unknown Document'),
                 'file_extension': document_doc.get('file_extension', '.pdf'),
                 'created_at': document_doc.get('created_at'),
-                'summary': document_doc.get('file_summary', 'Summary not available'),
+                'summary': summary,
                 'paragraphs': all_paragraphs
             }
             
@@ -652,7 +816,7 @@ class DocumentService:
                 "document_id": document_id,
                 "total_duration": round(total_duration, 2),
                 "paragraphs_included": len(all_paragraphs),
-                "summary_length": len(response['summary'])
+                "summary_length": len(summary) if summary else 0
             })
             
             LoggerUtils.log_performance("document_retrieval", total_duration,
@@ -676,3 +840,135 @@ class DocumentService:
                 "duration": total_duration
             })
             raise
+
+    def get_user_documents(self, user_id: str):
+        """Get all documents for a specific user"""
+        try:
+            logger.info(f"📋 Retrieving documents for user {user_id}")
+            
+            doc_db = self.couch_client.get_db(COUCH_DOCUMENT_DB_NAME)
+            user_documents = []
+            
+            # Iterate through all documents and filter by user_id
+            for doc_id in doc_db:
+                try:
+                    doc = doc_db[doc_id]
+                    if doc.get('user_id') == user_id:
+                        user_documents.append({
+                            'id': doc['_id'],
+                            'title': doc.get('title', 'Unknown Document'),
+                            'heading': doc.get('title', 'Unknown Document'),  # Alias for heading
+                            'name': f"{doc.get('title', 'Unknown Document')}{doc.get('file_extension', '.pdf')}",
+                            'file_extension': doc.get('file_extension', '.pdf'),
+                            'extension': doc.get('file_extension', '.pdf').replace('.', ''),  # Extension without dot
+                            'created_at': doc.get('created_at'),
+                            'total_chunks': doc.get('total_chunks', 0)
+                        })
+                except Exception as e:
+                    logger.warning(f"⚠️ Skipping invalid document: {doc_id}")
+                    continue
+            
+            # Sort by creation date (newest first)
+            user_documents.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+            
+            logger.success(f"✅ Retrieved {len(user_documents)} documents for user {user_id}")
+            return user_documents
+            
+        except Exception as e:
+            logger.error(f"❌ Error retrieving documents for user {user_id}: {str(e)}")
+            return []
+
+    def user_owns_document(self, user_id: str, document_id: str) -> bool:
+        """Check if a user owns a specific document"""
+        try:
+            doc_db = self.couch_client.get_db(COUCH_DOCUMENT_DB_NAME)
+            document_doc = doc_db.get(document_id)
+            
+            if not document_doc:
+                logger.warning(f"⚠️ Document {document_id} not found for ownership check")
+                return False
+            
+            doc_user_id = document_doc.get('user_id', '')
+            owns_document = doc_user_id == user_id
+            
+            logger.info(f"🔐 Ownership check for document {document_id}: user_id='{user_id}', doc_user_id='{doc_user_id}', owns={owns_document}")
+            
+            return owns_document
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking document ownership: {str(e)}")
+            return False
+
+    def get_pdf_file(self, document_id: str, filename: str):
+        """Get PDF file data for serving"""
+        try:
+            # Find the PDF document by filename
+            for doc_id in self.db:
+                try:
+                    doc = self.db[doc_id]
+                    if doc.get('pdf_name') == filename:
+                        # Get the attachment
+                        attachment = self.db.get_attachment(doc, filename)
+                        if attachment:
+                            return attachment.read()
+                except Exception:
+                    continue
+            
+            logger.warning(f"⚠️ PDF file not found: {filename}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Error retrieving PDF file {filename}: {str(e)}")
+            return None
+
+    def enhance_document_chunks(self, document_id: str, user_prompt: str = None):
+        """Enhance all chunks in a document with AI analysis"""
+        try:
+            logger.info(f"🚀 Starting document enhancement for {document_id}")
+            
+            # Get all chunks for the document
+            chunks = self.get_document_chunks(document_id)
+            if not chunks:
+                logger.warning(f"⚠️ No chunks found for document {document_id}")
+                return None
+            
+            enhanced_count = 0
+            chunk_db = self.couch_client.get_db(COUCH_CHUNK_DB_NAME)
+            
+            # Process each chunk
+            for chunk in chunks:
+                try:
+                    chunk_doc = chunk_db[chunk.id]
+                    
+                    # Skip if chunk already has a summary and no custom prompt
+                    if chunk_doc.get('summary') and chunk_doc['summary'].strip() and not user_prompt:
+                        continue
+                    
+                    # Generate enhanced summary
+                    content = chunk_doc.get('content', '')
+                    if content:
+                        if user_prompt:
+                            enhanced_summary = self.document_summarizer.summarize_chunk(content, user_prompt)
+                        else:
+                            enhanced_summary = self.document_summarizer.summarize_chunk(content)
+                        
+                        # Update the chunk with enhanced summary
+                        chunk_doc['summary'] = enhanced_summary
+                        chunk_db.save(chunk_doc)
+                        enhanced_count += 1
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to enhance chunk {chunk.id}: {str(e)}")
+                    continue
+            
+            logger.success(f"✅ Enhanced {enhanced_count} chunks for document {document_id}")
+            
+            return {
+                "enhanced_chunks": enhanced_count,
+                "total_chunks": len(chunks),
+                "document_id": document_id
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error enhancing document chunks: {str(e)}")
+            return None

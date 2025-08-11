@@ -8,6 +8,7 @@ from datetime import datetime
 from chats.chats import EducationConversationSystem, OpenAIClient, LocalLLMClient, Role
 from core import configuration
 from core.logger import logger, LoggerUtils
+from core.utils.helper import clean_text
 config = configuration.config
 
 # Create router
@@ -136,10 +137,11 @@ async def generate_conversation(
     """
     start_time = time.time()
     request_id = f"conv_{int(start_time * 1000)}"
+    paragraph = clean_text(request.paragraph)
     
     logger.info(f"🚀 Starting conversation generation", extra={
         "request_id": request_id,
-        "paragraph_length": len(request.paragraph),
+        "paragraph_length": len(paragraph),
         "llm_provider": request.llm_provider,
         "max_turns": request.max_turns_per_learner,
         "include_lucas": request.include_lucas,
@@ -162,22 +164,24 @@ async def generate_conversation(
         # Pretty-print supplied bundle info (if any) and document identifier
         print("--------------------------------")
         if request.bundle_id or request.bundle_text or request.bundle_index is not None:
-            print("Bundle Information:")
-            if request.bundle_id:
-                print(f"  • Bundle ID   : {request.bundle_id}")
-            if request.bundle_index is not None:
-                print(f"  • Bundle Index: {request.bundle_index}")
-            if request.bundle_text:
-                print(f"  • Bundle Text : {request.bundle_text}")
+            logger.info("📦 Bundle Information:", extra={
+                "request_id": request_id,
+                "bundle_id": request.bundle_id,
+                "bundle_index": request.bundle_index,
+                # "has_bundle_text": bool(request.bundle_text)
+            })
         else:
-            print("No bundle information supplied.")
-        
-        print(f"Document ID: {request.document_id or 'N/A'}")
+            logger.info("📦 No bundle information supplied", extra={"request_id": request_id})
+
+        logger.info("📄 Document Information", extra={
+            "request_id": request_id,
+            "document_id": request.document_id or "N/A"
+        })
         print("--------------------------------")
         
         logger.info(f"📝 Processing paragraph", extra={
             "request_id": request_id,
-            "paragraph_preview": request.paragraph[:100],
+            "paragraph_preview": paragraph[:100],
             "lucas_questions_count": len(request.lucas_questions) if request.lucas_questions else 0,
             "marcus_questions_count": len(request.marcus_questions) if request.marcus_questions else 0
         })
@@ -202,7 +206,7 @@ async def generate_conversation(
         # Generate conversation
         conversation_start = time.time()
         conversation_turns = system.generate_conversation(
-            request.paragraph,
+            paragraph,
             lucas_questions=request.lucas_questions,
             marcus_questions=request.marcus_questions,
             num_questions_per_learner=request.num_questions_per_learner,
@@ -246,7 +250,7 @@ async def generate_conversation(
         # Log API performance
         LoggerUtils.log_performance("api_conversation_generation", total_duration,
                                   turns=len(conversation_turns),
-                                  paragraph_length=len(request.paragraph),
+                                  paragraph_length=len(paragraph),
                                   llm_provider=request.llm_provider)
         
         return ConversationResponse(
@@ -266,7 +270,7 @@ async def generate_conversation(
             "request_id": request_id,
             "duration": round(total_duration, 2),
             "error_type": type(e).__name__,
-            "paragraph_length": len(request.paragraph)
+            "paragraph_length": len(paragraph)
         })
         LoggerUtils.log_error_with_context(e, {
             "component": "api_conversation_generation",

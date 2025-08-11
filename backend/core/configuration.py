@@ -17,6 +17,7 @@ class DatabaseConfig:
     paragraph_db_name: str = "aud_paras"
     chunk_db_name: str = "aud_chunks"
     bundle_db_name: str = "aud_bundles"
+    user_db_name: str = "aud_users"
 
 @dataclass
 class ServerConfig:
@@ -30,7 +31,9 @@ class ServerConfig:
 @dataclass
 class OllamaConfig:
     """Ollama configuration settings"""
-    model: str = os.getenv("OLLAMA_MODEL", "tinyllama:chat") #ollama pull tinyllama:chat
+    # model: str = os.getenv("OLLAMA_MODEL", "llama3:8b-instruct-q4_K_M") #ollama pull tinyllama:chat, llama3.2:latest 
+    model: str = os.getenv("OLLAMA_MODEL", "phi3:3.8b") #ollama pull tinyllama:chat, llama3.2:latest 
+    small_model: str = os.getenv("OLLAMA_SMALL_MODEL", "phi3:instruct")
     temperature: float = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
     max_tokens: int = int(os.getenv("OLLAMA_MAX_TOKENS", "1000"))
     top_p: float = float(os.getenv("OLLAMA_TOP_P", "0.9"))
@@ -60,6 +63,11 @@ class ProcessingConfig:
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "2500"))
     max_history_tokens: int = int(os.getenv("MAX_HISTORY_TOKENS", "1000"))
 
+@dataclass
+class ChunkingConfig:
+    """Chunking configuration settings"""
+    max_tokens_per_chunk: int = int(os.getenv("MAX_TOKENS_PER_CHUNK", "450"))
+    overlap_tokens: int = int(os.getenv("OVERLAP_TOKENS", "50"))
 
 @dataclass
 class AppConfig:
@@ -69,6 +77,13 @@ class AppConfig:
     rate_limit_per_minute: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     log_file: str = os.getenv("LOG_FILE", "app.log")
+    max_workers: int = int(os.getenv("MAX_WORKERS", "4"))
+    
+    # Authentication settings
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "7590598dcebdfd73a808a37e97a01ae5cd19e7bdb9b4838243fc7c10e33b3a6c")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8001,http://localhost:5173")
 
 
@@ -82,6 +97,7 @@ class Config:
         self.openai = OpenAIConfig()
         self.adobe = AdobeConfig()
         self.processing = ProcessingConfig()
+        self.chunking = ChunkingConfig()
         self.app = AppConfig()
     
     def validate(self) -> bool:
@@ -132,4 +148,6 @@ ADOBE_CLIENT_SECRET = config.adobe.client_secret
 MAX_PARA_LENGTH = config.processing.max_paragraph_length
 OLLAMA_MODEL = config.ollama.model
 CHUNK_SIZE = config.processing.chunk_size
-CURRENT_CHUNK_SIZE = 300
+CURRENT_MAX_TOKENS = config.chunking.max_tokens_per_chunk
+CURRENT_OVERLAP_TOKENS = config.chunking.overlap_tokens
+MAX_WORKERS = config.app.max_workers

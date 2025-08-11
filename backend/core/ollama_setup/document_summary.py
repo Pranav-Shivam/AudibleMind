@@ -15,11 +15,22 @@ class DocumentSummarizer:
         start_time = time.time()
         
         self.llm_client = llm_client
+        # Use OllamaConnector as default if no client is explicitly provided
         if not self.llm_client:
-            # Fallback to Ollama if no client provided
             self.model_name = configuration.config.ollama.model
             self.llm_client = OllamaConnector(self.model_name)
-            
+        else:
+            # If caller supplied a model name string instead of a client instance
+            if isinstance(self.llm_client, str):
+                self.model_name = self.llm_client
+                self.llm_client = OllamaConnector(self.model_name)
+            else:
+                # When a client instance is supplied, try to grab its model name attribute if available
+                self.model_name = getattr(self.llm_client, "model_name", configuration.config.ollama.model)
+
+        # Ensure we always have an OllamaConnector handy for utility methods such as count_tokens()
+        self.ollama_connector = self.llm_client if isinstance(self.llm_client, OllamaConnector) else OllamaConnector(self.model_name)
+
         self.prompt_manager = PromptManager()
         self.text_processing = TextProcessing()
         

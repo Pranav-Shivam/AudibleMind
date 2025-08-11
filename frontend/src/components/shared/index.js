@@ -1,5 +1,5 @@
 // Shared Components - Modern UI Component Library
-// This file exports all reusable components for the ShiruVox application
+// This file exports all reusable components for the AudibleMind application
 
 // Core UI Components
 export { default as Button } from './Button';
@@ -10,4 +10,6 @@ export { default as ToastNotification } from './ToastNotification';
 
 // Enhanced Components
 export { default as ErrorBoundary } from './ErrorBoundary';
-export { default as FileUpload } from './FileUpload'; 
+export { default as FileUpload } from './FileUpload';
+export { default as PromptModal } from './PromptModal';
+export { default as NavBar } from './NavBar'; 

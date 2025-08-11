@@ -2,6 +2,7 @@ import { CloseOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import '../styles/Chat.css';
 import { Button, Input, ToastNotification } from './shared';
+import { API_URL } from '../services/apiUrl';
 
 
 const ExportIcon = () => (
@@ -191,7 +192,7 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
     }
 
     try {
-      const response = await fetch('http://localhost:8001/api/v1/generate-conversation', {
+      const response = await fetch(`${API_URL}/api/v1/generate-conversation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -261,7 +262,7 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
 
   return (
     <>
-      {isVisible && (
+      {isVisible && !showConversationModal && (
         <div className="chat-modal-overlay">
           <div className="chat-modal-backdrop" onClick={onClose} />
           <div className="chat-modal-content">
@@ -271,7 +272,6 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
               </h2>
               <Button
                 onClick={onClose}
-                type="text"
                 icon={<CloseOutlined />}
                 aria-label="Close modal"
                 className="close-button"
@@ -577,7 +577,13 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
       {/* Conversation Display Modal */}
       {showConversationModal && conversation && (
         <div className="conversation-modal-overlay">
-          <div className="conversation-modal-backdrop" onClick={() => setShowConversationModal(false)} />
+          <div
+            className="conversation-modal-backdrop"
+            onClick={() => {
+              setShowConversationModal(false);
+              if (onClose) onClose();
+            }}
+          />
           <div className="conversation-modal-content">
             <div className="conversation-modal-header">
               <div className="conversation-header-info">
@@ -610,8 +616,10 @@ const Chat = ({ initialParagraph, isVisible, onClose, bundleInfo, documentId = n
                   Export
                 </Button>
                 <Button
-                  onClick={() => setShowConversationModal(false)}
-                  type="text"
+                  onClick={() => {
+                    setShowConversationModal(false);
+                    if (onClose) onClose();
+                  }}
                   icon={<CloseOutlined />}
                   aria-label="Close modal"
                   className="close-button"

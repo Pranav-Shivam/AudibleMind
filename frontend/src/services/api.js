@@ -40,6 +40,11 @@ export const documentApi = {
    * @returns {Promise<string>} - Document ID
    */
   async uploadDocument(file, userPrompt = '') {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('user_prompt', userPrompt.trim() || '');
@@ -47,6 +52,9 @@ export const documentApi = {
     try {
       const response = await fetch(`${API_BASE_URL}/document/upload-file`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -94,6 +102,11 @@ export const documentApi = {
    * @returns {Promise<Object>} - Document details
    */
   async getDocument(documentId) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
     const cacheKey = createCacheKey('GET', `${API_BASE_URL}/document/${documentId}`);
     
     // Check cache first
@@ -110,7 +123,13 @@ export const documentApi = {
     // Create new request
     const requestPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/document/${documentId}`);
+        const response = await fetch(`${API_BASE_URL}/document/${documentId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
         if (!response.ok) {
           let errorMessage = `Failed to fetch document: ${response.status}`;
@@ -154,6 +173,11 @@ export const documentApi = {
    * @returns {Promise<Object>} - Document chunks data
    */
   async getDocumentChunks(documentId) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
     const cacheKey = createCacheKey('GET', `${API_BASE_URL}/document/${documentId}/chunks`);
     
     // Check cache first
@@ -172,6 +196,10 @@ export const documentApi = {
       try {
         const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks`, {
           method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         if (!response.ok) {
@@ -218,12 +246,20 @@ export const documentApi = {
    * @returns {Promise<Object>} - Chunk summary data
    */
   async summarizeChunk(documentId, chunkIndex, userPrompt = '') {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
     const formData = new FormData();
     formData.append('user_prompt', userPrompt.trim());
 
     try {
       const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks/${chunkIndex}/summarize`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -237,6 +273,140 @@ export const documentApi = {
           }
         } catch (e) {
           errorMessage = `Failed to summarize chunk: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new ApiError(errorMessage, response.status, null);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Network error: Could not connect to server', 0, null);
+    }
+  },
+
+  /**
+   * Get all documents for the authenticated user
+   * @returns {Promise<Object>} - List of user documents
+   */
+  async getAllDocuments() {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/document`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Failed to fetch documents: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch (e) {
+          errorMessage = `Failed to fetch documents: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new ApiError(errorMessage, response.status, null);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Network error: Could not connect to server', 0, null);
+    }
+  },
+
+  /**
+   * Enhance document with AI (no prompt)
+   * @param {string} documentId - Document ID
+   * @returns {Promise<Object>} - Enhancement result
+   */
+  async enhanceDocument(documentId) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}), // Empty body for default AI enhancement
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Failed to enhance document: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch (e) {
+          errorMessage = `Failed to enhance document: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new ApiError(errorMessage, response.status, null);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Network error: Could not connect to server', 0, null);
+    }
+  },
+
+  /**
+   * Enhance document with custom user prompt
+   * @param {string} documentId - Document ID
+   * @param {string} prompt - User prompt for AI enhancement
+   * @returns {Promise<Object>} - Enhancement result
+   */
+  async enhanceDocumentWithPrompt(documentId, prompt) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new ApiError('No authentication token found', 401, null);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/document/${documentId}/chunks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Failed to enhance document: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch (e) {
+          errorMessage = `Failed to enhance document: ${response.status} ${response.statusText}`;
         }
         
         throw new ApiError(errorMessage, response.status, null);

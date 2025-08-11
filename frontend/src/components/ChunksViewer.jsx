@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { documentApi } from "../services/api";
 import { ProTable } from "@ant-design/pro-components";
 import { 
@@ -36,7 +36,7 @@ import {
   CheckCircleOutlined,
   InfoCircleOutlined
 } from "@ant-design/icons";
-import ShiruVoxChunk from "./ContentViewer";
+import AudibleMindChunk from "./ContentViewer";
 import "../styles/ChunkViewer.css";
 import Chat from "./Chat";
 
@@ -347,6 +347,29 @@ const ChunksViewer = () => {
       ),
     },
     {
+      title: "Page",
+      dataIndex: "page_number",
+      width: isMobile ? 70 : 90,
+      align: "center",
+      sorter: (a, b) => (a.page_number || 0) - (b.page_number || 0),
+      render: (page) => (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          backgroundColor: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-subtle)',
+          fontSize: 'var(--text-xs)',
+          color: 'var(--color-text-secondary)'
+        }}>
+          <FileTextOutlined style={{ color: 'var(--color-primary)' }} />
+          <span>Page {page ?? 0}</span>
+        </div>
+      ),
+    },
+    {
       title: "Status",
       dataIndex: "is_user_liked",
       width: isMobile ? 80 : 120,
@@ -585,123 +608,6 @@ const ChunksViewer = () => {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      {/* Header */}
-      <header style={{
-        flexShrink: 0,
-        backgroundColor: 'var(--color-surface-primary)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--color-border-subtle)',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{
-          maxWidth: '80rem',
-          margin: '0 auto',
-          padding: '0 var(--spacing-4)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '56px',
-            flexWrap: 'wrap',
-            gap: 'var(--spacing-2)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)',
-              flexShrink: 0
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                background: 'var(--gradient-primary)',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{
-                  color: 'white',
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--font-weight-bold)'
-                }}>📄</span>
-              </div>
-              <div>
-                <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                {/* ShiruVox: As we click on the logo, we will be redirected to the landing page */}
-                <h1 style={{
-                  fontSize: isMobile ? 'var(--text-base)' : 'var(--text-lg)',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: 'var(--color-text-primary)',
-                  margin: 0
-                }}>ShiruVox</h1>
-                <p style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--color-text-secondary)',
-                  margin: 0,
-                  display: isMobile ? 'none' : 'block'
-                }}>Turning Research into Resonance</p>
-                </Link>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 'var(--spacing-2)' : 'var(--spacing-4)',
-              flexWrap: 'wrap'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: isMobile ? 'var(--spacing-2)' : 'var(--spacing-3)',
-                flexWrap: 'wrap'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)',
-                  padding: 'var(--spacing-1) var(--spacing-3)',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--color-surface-secondary)',
-                  border: '1px solid var(--color-border-subtle)',
-                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)'
-                }}>
-                  <BarChartOutlined style={{ color: 'var(--color-primary)' }} />
-                  <span style={{
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-text-primary)'
-                  }}>{chunks.length}</span>
-                  <span style={{
-                    color: 'var(--color-text-secondary)',
-                    display: isMobile ? 'none' : 'inline'
-                  }}>Items</span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)',
-                  padding: 'var(--spacing-1) var(--spacing-3)',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--color-success-light)',
-                  border: '1px solid var(--color-success)',
-                  fontSize: isMobile ? 'var(--text-xs)' : 'var(--text-sm)'
-                }}>
-                  <HeartFilled style={{ color: 'var(--color-success)' }} />
-                  <span style={{
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-success)'
-                  }}>{chunks.filter(item => item.is_user_liked).length}</span>
-                  <span style={{
-                    color: 'var(--color-success)',
-                    display: isMobile ? 'none' : 'inline'
-                  }}>Liked</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main style={{
@@ -728,9 +634,11 @@ const ChunksViewer = () => {
           flexDirection: 'column',
           minHeight: 0,
           overflow: 'hidden',
-          position: 'relative'
+          position: 'relative',
+          className: '!h-[100%]'
         }}>
           <ProTable
+            className="[&_.ant-spin-container]:!h-[100%] [&_.ant-spin-container_.ant-table]:!h-[90%] [&_.ant-spin-container_.ant-pagination]:!h-[10%]"
             rowKey="id"
             columns={columns}
             dataSource={chunks}
@@ -949,7 +857,7 @@ const ChunksViewer = () => {
             >
               ✕
             </Button>
-            <ShiruVoxChunk 
+            <AudibleMindChunk 
               key={selectedChunk.chunk_index} 
               chunk={selectedChunk} 
               onAudioCreated={(audioElement) => {

@@ -12,6 +12,7 @@ from core.logger import logger, LoggerUtils
 from api.document.document import document_router
 from api.chats.chats import router as chats_router
 from api.audio.audio import audio_router
+from api.auth.auth import auth_router
 
 
 # Log application startup
@@ -114,6 +115,7 @@ async def shutdown_event():
 
 # Include routers
 logger.info("📋 Registering API routers")
+app.include_router(auth_router, prefix="/api", tags=["authentication"])
 app.include_router(document_router, tags=["documents"])
 app.include_router(chats_router, tags=["chats"])
 app.include_router(audio_router, prefix="/audio", tags=["audio"])
