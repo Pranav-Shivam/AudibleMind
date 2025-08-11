@@ -137,7 +137,8 @@ async def generate_conversation(
     """
     start_time = time.time()
     request_id = f"conv_{int(start_time * 1000)}"
-    paragraph = clean_text(request.paragraph)
+    # paragraph = clean_text(request.paragraph)
+    paragraph = request.paragraph
     
     logger.info(f"🚀 Starting conversation generation", extra={
         "request_id": request_id,

@@ -10,6 +10,7 @@ from core.logger import logger, LoggerUtils
 from core.utils.bundle_service import BundleService
 from core.prompt.prompt import PromptManager
 from core.ollama_setup.connector import OllamaConnector
+from core.utils.helper import clean_text
 config = configuration.config
 
 class Role(Enum):
@@ -54,6 +55,7 @@ class OpenAIClient(LLMClient):
         self.api_key = api_key
         self.model = model
         self.base_url = "https://api.openai.com/v1"
+        self.provider = "openai"
         
         logger.info(f"🤖 Initializing OpenAI client with model: {model}")
 
@@ -255,6 +257,7 @@ class OllamaConnector:
 class LocalLLMClient(LLMClient):
     def __init__(self, model_name: str = None):
         logger.info(f"🔧 Initializing Local LLM client with model: {model_name}")
+        self.provider = "ollama"
         self.ollama_connector = OllamaConnector(model_name)
 
     def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 500) -> str:
@@ -462,6 +465,28 @@ class EducationConversationSystem:
                             bundle_text: str = None) -> List[ConversationTurn]:
         """Generate a complete educational conversation with user-provided or auto-generated questions"""
         start_time = time.time()
+
+        try:
+
+            if self.llm_client.provider == "ollama":
+                technical_paragraph = clean_text(technical_paragraph)
+                logger.info(f"✅ Technical paragraph cleaned", extra={
+                    "paragraph_length": len(technical_paragraph),
+                    "provider": self.llm_client.provider
+                })
+            else:
+                prompt_manager = PromptManager()
+                technical_paragraph = prompt_manager.get_clean_text_prompt(technical_paragraph)
+                technical_paragraph = self.llm_client.generate(technical_paragraph, temperature=0.3, max_tokens=1000)
+                logger.info(f"✅ Technical paragraph cleaned", extra={
+                    "paragraph_length": len(technical_paragraph),
+                    "provider": self.llm_client.provider
+                })
+        except Exception as e:
+            logger.error(f"❌ Error cleaning technical paragraph: {str(e)}", extra={
+                "error": str(e)
+            })
+            raise
         
         logger.info(f"🚀 Starting conversation generation", extra={
             "paragraph_length": len(technical_paragraph),
