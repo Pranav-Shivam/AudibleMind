@@ -13,6 +13,7 @@ from api.document.document import document_router
 from api.chats.chats import router as chats_router
 from api.audio.audio import audio_router
 from api.auth.auth import auth_router
+from api.bot.bot import router as bot_router
 
 
 # Log application startup
@@ -119,6 +120,7 @@ app.include_router(auth_router, prefix="/api", tags=["authentication"])
 app.include_router(document_router, tags=["documents"])
 app.include_router(chats_router, tags=["chats"])
 app.include_router(audio_router, prefix="/audio", tags=["audio"])
+app.include_router(bot_router, tags=["bot"])
 logger.info("✅ All routers registered successfully")
 
 if __name__ == "__main__":

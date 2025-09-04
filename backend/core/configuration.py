@@ -1,7 +1,9 @@
 import os
 from typing import Optional, List
 from dataclasses import dataclass
+from dotenv import load_dotenv
 
+load_dotenv(encoding="utf-16")
 
 @dataclass
 class DatabaseConfig:
@@ -18,6 +20,7 @@ class DatabaseConfig:
     chunk_db_name: str = "aud_chunks"
     bundle_db_name: str = "aud_bundles"
     user_db_name: str = "aud_users"
+    threads_db_name: str = "aud_threads"
 
 @dataclass
 class ServerConfig:
@@ -120,6 +123,7 @@ class Config:
         return f"http://{self.server.host}:{self.server.port}"
 
 
+
 # Global configuration instance
 config = Config()
 
@@ -141,6 +145,7 @@ COUCH_BUNDLE_DB_NAME = config.database.bundle_db_name
 
 OPENAI_KEY = config.openai.api_key
 OPENAI_MODEL = config.openai.model
+OPENAI_API_KEY = config.openai.api_key
 
 ADOBE_CLIENT_ID = config.adobe.client_id
 ADOBE_CLIENT_SECRET = config.adobe.client_secret
@@ -151,3 +156,5 @@ CHUNK_SIZE = config.processing.chunk_size
 CURRENT_MAX_TOKENS = config.chunking.max_tokens_per_chunk
 CURRENT_OVERLAP_TOKENS = config.chunking.overlap_tokens
 MAX_WORKERS = config.app.max_workers
+
+# print(OPENAI_API_KEY)

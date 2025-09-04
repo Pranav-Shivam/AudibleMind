@@ -7,6 +7,7 @@ import {
   LoadingSpinner,
   PromptModal
 } from '../components/shared';
+import ChatInterface from '../components/bot/ChatInterface';
 import { documentApi, ApiError } from '../services/api';
 import { API_URL } from '../services/apiUrl';
 
@@ -21,6 +22,9 @@ const Dashboard = () => {
     isOpen: false,
     documentId: null,
     documentTitle: ''
+  });
+  const [chatInterface, setChatInterface] = useState({
+    isOpen: false
   });
 
   // Handle responsive behavior
@@ -59,6 +63,14 @@ const Dashboard = () => {
 
   const handleUploadDocument = () => {
     navigate('/landing');
+  };
+
+  const handleChatWithAI = () => {
+    setChatInterface({ isOpen: true });
+  };
+
+  const handleCloseChat = () => {
+    setChatInterface({ isOpen: false });
   };
 
   const handleViewDocument = useCallback((document) => {
@@ -178,6 +190,16 @@ const Dashboard = () => {
             >
               <i className="material-symbols-outlined">upload</i>
               Upload New Document
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              className="flex items-center [&_span]:flex [&_span]:gap-4"
+              onClick={handleChatWithAI}
+              id="chat-with-ai-button"
+            >
+              <i className="material-symbols-outlined">chat</i>
+              Chat with AI
             </Button>
           </div>
         </div>
@@ -511,6 +533,13 @@ const Dashboard = () => {
         placeholder="Enter your custom prompt to guide AI analysis..."
         submitText="Enhance with Prompt"
         loadingText="Enhancing document..."
+      />
+
+      {/* Chat Interface */}
+      <ChatInterface
+        isVisible={chatInterface.isOpen}
+        onClose={handleCloseChat}
+        showToast={showToast}
       />
     </div>
   );

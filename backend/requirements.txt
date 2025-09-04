@@ -18,6 +18,15 @@ langdetect==1.0.9
 nltk==3.8.1
 spacy==3.7.2
 pyttsx3
+# LangChain dependencies for conversation management
+langchain>=0.3.20
+langchain-community>=0.3.19
+langchain-core>=0.3.69
+langgraph>=0.6.6
+sentence-transformers>=5.1.0
+numpy>=1.21.0
+scikit-learn>=1.7.0
+scipy>=1.16.0
 # Authentication dependencies
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]

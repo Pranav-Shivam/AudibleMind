@@ -379,6 +379,61 @@ img {
   100% { transform: translateX(100%); }
 }
 
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes messageSlideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes chatInterfaceFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -463,22 +518,288 @@ img {
   }
 }
 
+/* Chat Interface Styles */
+.chat-interface-overlay {
+  animation: chatInterfaceFadeIn var(--transition-normal);
+}
+
+.thread-list-collapsed {
+  animation: slideOut var(--transition-normal);
+}
+
+.thread-list-expanded {
+  animation: slideIn var(--transition-normal);
+}
+
+.message-bubble {
+  animation: messageSlideIn var(--transition-fast);
+}
+
+.typing-dot {
+  animation: typing 1.4s infinite ease-in-out;
+}
+
 /* Responsive Typography */
 @media (max-width: 640px) {
   html {
     font-size: 14px;
   }
-  
+
   h1 {
     font-size: clamp(1.5rem, 8vw, 2.5rem);
   }
-  
+
   h2 {
     font-size: clamp(1.25rem, 6vw, 2rem);
   }
-  
+
   h3 {
     font-size: clamp(1.125rem, 5vw, 1.5rem);
+  }
+}
+
+/* Enhanced Chat Interface Styles */
+.chat-interface-overlay {
+  animation: chatInterfaceFadeIn var(--transition-normal);
+}
+
+.chat-interface-content {
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-surface-primary) !important;
+}
+
+/* Ensure no black backgrounds in chat components */
+.chat-messages,
+.chat-panel,
+.message-container {
+  background: var(--color-surface-primary) !important;
+}
+
+/* Fix any potential black screen issues */
+.chat-interface-content * {
+  background-color: transparent;
+}
+
+.chat-interface-content .chat-messages {
+  background: var(--color-surface-primary) !important;
+}
+
+.message-bubble {
+  animation: messageSlideIn var(--transition-fast);
+}
+
+.typing-dot {
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+/* Focus Management and Accessibility */
+.chat-interface-content:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skip Links for Accessibility */
+.skip-link-chat {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--color-primary);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  z-index: 10000;
+  transition: top var(--transition-normal);
+  font-size: var(--text-sm);
+}
+
+.skip-link-chat:focus {
+  top: 6px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .chat-interface-content {
+    border: 3px solid currentColor;
+    background: var(--color-surface-primary);
+  }
+  
+  .message-bubble {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .chat-interface-overlay,
+  .message-bubble,
+  .typing-dot {
+    animation: none;
+  }
+  
+  * {
+    transition: none !important;
+  }
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 1440px) {
+  .chat-interface-content {
+    max-width: 95vw !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .chat-interface-content {
+    max-width: 95vw !important;
+    height: 95vh !important;
+  }
+
+  .thread-list {
+    width: 280px !important;
+  }
+
+  .response-toggle {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .chat-interface-content {
+    max-width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .thread-list {
+    width: 250px !important;
+  }
+
+  .chat-messages {
+    padding: var(--spacing-4) !important;
+  }
+
+  .message-bubble {
+    max-width: 90% !important;
+  }
+
+  .chat-header {
+    flex-direction: column !important;
+    gap: var(--spacing-2) !important;
+    align-items: stretch !important;
+  }
+
+  .response-toggle {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+
+  .response-toggle > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--spacing-2) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .thread-list {
+    width: 200px !important;
+  }
+
+  .thread-list-collapsed {
+    width: 50px !important;
+  }
+
+  .chat-header {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+
+  .chat-input-section {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+
+  .response-toggle {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+
+  .message-bubble {
+    max-width: 95% !important;
+  }
+
+  /* Stack response buttons vertically on small screens */
+  .response-toggle .grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-interface-content {
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  .thread-list {
+    width: 180px !important;
+  }
+
+  .thread-list-collapsed {
+    width: 45px !important;
+  }
+
+  .chat-messages {
+    padding: var(--spacing-3) !important;
+  }
+
+  .chat-input-section {
+    padding: var(--spacing-2) var(--spacing-3) !important;
+  }
+
+  .response-toggle {
+    padding: var(--spacing-2) var(--spacing-3) !important;
+  }
+}
+
+/* Landscape Orientation Adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+  .chat-interface-content {
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  .chat-messages {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+}
+
+/* Print Styles for Chat */
+@media print {
+  .chat-interface-overlay {
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .chat-interface-content {
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  .thread-list {
+    display: none !important;
+  }
+
+  .chat-header,
+  .response-toggle,
+  .chat-input-section {
+    display: none !important;
+  }
+
+  .message-bubble {
+    page-break-inside: avoid;
+    margin-bottom: 1rem !important;
   }
 }
 
@@ -1742,4 +2063,74 @@ img {
   .mode-description {
     font-size: var(--text-xs);
   }
+}
+
+/* ============ URGENT HOVER FIXES FOR CHAT INTERFACE ============ */
+/* These styles prevent UI fluctuation on hover by using CSS instead of JS */
+
+.header-button:hover {
+  background: var(--color-surface-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.header-button-close:hover {
+  background: var(--color-error-light) !important;
+  color: var(--color-error) !important;
+}
+
+.thread-item:hover:not(.thread-active) {
+  background: var(--color-surface-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+.search-close-button:hover {
+  background: var(--color-surface-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* ============ CRITICAL MESSAGE HOVER FIXES ============ */
+/* These prevent the main UI fluctuation issue */
+
+.message-bubble.message-container:hover .message-actions {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.message-bubble-content {
+  transition: transform 0.1s ease;
+}
+
+.message-bubble-content:hover {
+  transform: scale(1.005);
+}
+
+.message-action-btn:hover {
+  background: var(--color-surface-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Prevent layout shifts on hover */
+.message-container {
+  position: relative;
+}
+
+.message-actions {
+  will-change: opacity;
+}
+
+/* ============ THREAD LIST HOVER FIXES ============ */
+.thread-indicator-btn {
+  transition: transform 0.1s ease, background-color 0.1s ease !important;
+}
+
+.thread-indicator-btn:hover {
+  transform: scale(1.05) !important;
+}
+
+.thread-item-wrapper:hover {
+  transform: scale(1.005) !important;
+}
+
+.thread-item-wrapper {
+  transition: transform 0.1s ease !important;
 }

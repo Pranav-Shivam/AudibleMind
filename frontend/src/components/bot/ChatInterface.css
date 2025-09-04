@@ -1,0 +1,98 @@
+/* Chat Interface Header Styles */
+.chat-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.chat-header-title h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.provider-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.provider-badge.local {
+  background-color: #3b82f6;
+}
+
+.provider-badge.cloud {
+  background-color: #10b981;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.connection-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.connection-dot.connected {
+  background-color: var(--color-success);
+}
+
+.connection-dot.connecting {
+  background-color: var(--color-warning);
+}
+
+.model-display {
+  margin: 0 4px;
+  opacity: 0.5;
+}
+
+.model-name {
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.8;
+  background-color: #f3f4f6;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.dark .model-name {
+  background-color: #374151;
+}
+
+/* Settings Panel Styles */
+.settings-panel-content {
+  padding: 16px;
+}
+
+.settings-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px 0;
+}
+
+/* Settings Button Indicator */
+.settings-button {
+  position: relative;
+}
+
+.settings-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 1px solid white;
+}
