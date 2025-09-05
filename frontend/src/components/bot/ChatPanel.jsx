@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Copy, Check, ThumbsUp, ThumbsDown, MoreVertical, Bot, User, Star } from 'lucide-react';
 import { Button, LoadingSpinner } from '../shared';
+import ConversationFlow from './ConversationFlow';
 
 const ChatPanel = ({ messages, isLoading, error, currentThread, selectedResponseIndex, onResponseSelect, onMarkPreferred, onRetryMessage, onEditMessage, onDeleteMessage, onCopyMessage }) => {
   const messagesEndRef = useRef(null);
@@ -272,41 +273,103 @@ const ChatPanel = ({ messages, isLoading, error, currentThread, selectedResponse
                 </div>
               )}
 
-              {/* Bot Message Metadata */}
+              {/* Enhanced Bot Message Metadata */}
               {isBot && (
                 <div style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  flexDirection: 'column',
+                  gap: 'var(--spacing-2)',
                   marginTop: 'var(--spacing-3)',
                   paddingTop: 'var(--spacing-2)',
                   borderTop: '1px solid var(--color-border-subtle)',
                   fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-tertiary)'
                 }}>
+                  {/* Context Information */}
+                  {(message.wasContinuation || message.queryType) && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-2)',
+                      padding: 'var(--spacing-2)',
+                      background: message.wasContinuation 
+                        ? 'var(--color-success-50)' 
+                        : 'var(--color-primary-50)',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${message.wasContinuation 
+                        ? 'var(--color-success-200)' 
+                        : 'var(--color-primary-200)'}`
+                    }}>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: 'var(--radius-full)',
+                        background: message.wasContinuation 
+                          ? 'var(--color-success)' 
+                          : 'var(--color-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        color: 'white'
+                      }}>
+                        {message.wasContinuation ? '🔗' : '✨'}
+                      </div>
+                      <span style={{
+                        fontSize: 'var(--text-xs)',
+                        color: message.wasContinuation 
+                          ? 'var(--color-success-700)' 
+                          : 'var(--color-primary-700)',
+                        fontWeight: 'var(--font-weight-medium)'
+                      }}>
+                        {message.wasContinuation 
+                          ? 'Contextual Response' 
+                          : message.queryType === 'new_topic' 
+                            ? 'New Topic (HyDE)' 
+                            : 'Direct Response'}
+                      </span>
+                      {message.classificationReasoning && (
+                        <span style={{
+                          fontSize: 'var(--text-xs)',
+                          opacity: 0.7,
+                          marginLeft: 'var(--spacing-1)'
+                        }}>
+                          • {message.classificationReasoning}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Technical Metadata */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 'var(--spacing-2)'
+                    justifyContent: 'space-between'
                   }}>
-                    <span>{formatTime(message.timestamp)}</span>
-                    {message.metadata && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          {message.metadata.model} 
-                          {message.metadata.confidence && 
-                            ` (${Math.round(message.metadata.confidence * 100)}%)`
-                          }
-                        </span>
-                        {message.metadata.processingTime && (
-                          <>
-                            <span>•</span>
-                            <span>{(message.metadata.processingTime / 1000).toFixed(1)}s</span>
-                          </>
-                        )}
-                      </>
-                    )}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-2)'
+                    }}>
+                      <span>{formatTime(message.timestamp)}</span>
+                      {message.metadata && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {message.metadata.model} 
+                            {message.metadata.confidence && 
+                              ` (${Math.round(message.metadata.confidence * 100)}%)`
+                            }
+                          </span>
+                          {message.metadata.processingTime && (
+                            <>
+                              <span>•</span>
+                              <span>{(message.metadata.processingTime / 1000).toFixed(1)}s</span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -410,20 +473,36 @@ const ChatPanel = ({ messages, isLoading, error, currentThread, selectedResponse
                               fontWeight: 'var(--font-weight-bold)',
                               marginBottom: '2px'
                             }}>
-                              Response {String.fromCharCode(65 + index)}
+                              {response.type === 'contextual' 
+                                ? 'Contextual Response'
+                                : response.type === 'essence'
+                                  ? 'Essence (A)'
+                                  : response.type === 'systems'
+                                    ? 'Systems (B)'
+                                    : response.type === 'application'
+                                      ? 'Application (C)'
+                                      : `Response ${String.fromCharCode(65 + index)}`
+                              }
                             </div>
                             
-                            {response.confidence && (
-                              <div style={{
-                                fontSize: 'var(--text-xs)',
-                                opacity: 0.8,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--spacing-1)'
-                              }}>
-                                {Math.round(response.confidence * 100)}% confidence
-                              </div>
-                            )}
+                            <div style={{
+                              fontSize: 'var(--text-xs)',
+                              opacity: 0.8,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 'var(--spacing-1)'
+                            }}>
+                              {response.type === 'contextual' && '🔗 Uses conversation context'}
+                              {response.type === 'essence' && '💡 Fundamental concepts'}
+                              {response.type === 'systems' && '⚙️ How it works'}
+                              {response.type === 'application' && '🚀 Practical uses'}
+                              {response.confidence && (
+                                <>
+                                  {response.type && ' • '}
+                                  {Math.round(response.confidence * 100)}% confidence
+                                </>
+                              )}
+                            </div>
                           </div>
                         </motion.button>
 
@@ -840,16 +919,26 @@ const ChatPanel = ({ messages, isLoading, error, currentThread, selectedResponse
   );
 
   return (
-    <div className="chat-messages" style={{
+    <div style={{
       flex: 1,
-      overflowY: 'auto',
-      padding: 'var(--spacing-6)',
       display: 'flex',
       flexDirection: 'column',
-      gap: 'var(--spacing-4)',
-      background: 'var(--color-surface-primary)',
-      minHeight: '200px'
+      overflow: 'hidden',
+      background: 'var(--color-surface-primary)'
     }}>
+      {/* Conversation Flow Indicator */}
+      <ConversationFlow messages={messages} />
+      
+      <div className="chat-messages" style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: 'var(--spacing-6)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--spacing-4)',
+        background: 'var(--color-surface-primary)',
+        minHeight: '200px'
+      }}>
       {messages.length === 0 && !isLoading && !error ? (
         <WelcomeMessage currentThread={currentThread} />
       ) : (
@@ -876,6 +965,7 @@ const ChatPanel = ({ messages, isLoading, error, currentThread, selectedResponse
         </motion.div>
       )}
       <div ref={messagesEndRef} />
+      </div>
     </div>
   );
 };

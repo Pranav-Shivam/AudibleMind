@@ -3,7 +3,7 @@ from typing import Optional, List
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
-load_dotenv(encoding="utf-16")
+load_dotenv()
 
 @dataclass
 class DatabaseConfig:
@@ -47,7 +47,8 @@ class OllamaConfig:
 class OpenAIConfig:
     """OpenAI configuration settings"""
     api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
-    model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+    # model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+    model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", "500"))
     temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
 

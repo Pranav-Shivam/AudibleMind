@@ -121,27 +121,62 @@ const ChatInterface = ({ isVisible, onClose, showToast }) => {
     try {
       const response = await botApi.postMessage(currentThreadId, message, selectedProvider, selectedModel);
       
-      const { responses, sub_queries, thread_id } = response;
+      const { 
+        responses, 
+        sub_queries, 
+        thread_id, 
+        query_type, 
+        hyde_responses, 
+        direct_response,
+        was_continuation,
+        classification_reasoning 
+      } = response;
       
       setCurrentThreadId(thread_id);
 
-      // Convert backend responses to frontend format
-      const responseKeys = Object.keys(responses);
-      const formattedResponses = responseKeys.map((key, index) => ({
-        id: key, // Use query_A/B/C as ID
-        content: responses[key],
-        isPreferred: false, // Default state
-      }));
+      let formattedResponses = [];
+      let botContent = "";
+      
+      // Handle new response format based on query type
+      if (query_type === 'new_topic' && hyde_responses) {
+        // HyDE responses for new topics
+        formattedResponses = [
+          { id: 'query_A', content: hyde_responses.query_A, isPreferred: false, type: 'essence' },
+          { id: 'query_B', content: hyde_responses.query_B, isPreferred: false, type: 'systems' },
+          { id: 'query_C', content: hyde_responses.query_C, isPreferred: false, type: 'application' }
+        ];
+        botContent = hyde_responses.query_A; // Default to essence response
+      } else if (direct_response) {
+        // Direct response for follow-ups
+        const directContent = direct_response.content || direct_response;
+        formattedResponses = [
+          { id: 'direct', content: directContent, isPreferred: true, type: 'contextual' }
+        ];
+        botContent = directContent;
+      } else if (responses) {
+        // Legacy format fallback
+        const responseKeys = Object.keys(responses);
+        formattedResponses = responseKeys.map((key, index) => ({
+          id: key,
+          content: responses[key],
+          isPreferred: false,
+          type: index === 0 ? 'essence' : index === 1 ? 'systems' : 'application'
+        }));
+        botContent = formattedResponses[0]?.content || "";
+      }
 
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: formattedResponses[0].content, // Default to first response
+        content: botContent,
         timestamp: new Date(),
         responses: formattedResponses,
-        selectedResponse: 0, // Initialize with first response selected
+        selectedResponse: 0,
         isTyping: false,
-        metadata: sub_queries[sub_queries.length-1]?.response_metadata || {},
+        queryType: query_type,
+        wasContinuation: was_continuation,
+        classificationReasoning: classification_reasoning,
+        metadata: sub_queries?.[sub_queries.length-1]?.response_metadata || {},
       };
       
       // Batch all state updates to prevent UI fluctuation

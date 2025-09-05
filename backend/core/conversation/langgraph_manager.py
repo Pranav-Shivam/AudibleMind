@@ -164,21 +164,26 @@ class LangGraphConversationManager:
     async def _continue_thread_node(self, state: ConversationState) -> ConversationState:
         """Node for continuing existing conversation thread"""
         logger.info(f"🔗 Continuing conversation thread: {state.get('thread_id')}")
-        
-        # Build conversation history for context
+
+        # Get conversation history from LangChain memory
         if state.get("thread_id"):
-            history_messages = self.context_manager.build_conversation_history(state["thread_id"])
-            
-            # Add relevant context to messages
-            context_messages = []
-            if state.get("conversation_context"):
-                context_summary = self._build_context_summary(state["conversation_context"])
-                context_messages.append(SystemMessage(content=f"Previous conversation context: {context_summary}"))
-            
-            state["messages"] = context_messages + history_messages + [HumanMessage(content=state["user_query"])]
+            # Get the memory instance for this thread
+            memory = self.context_manager.get_memory_for_thread(state["thread_id"])
+
+            # Get current conversation history
+            conversation_history = memory.chat_memory.messages
+
+            # Add the new user query
+            state["messages"] = conversation_history + [HumanMessage(content=state["user_query"])]
+
+            logger.info(f"📚 Loaded conversation history", extra={
+                "thread_id": state["thread_id"],
+                "total_messages": len(conversation_history),
+                "memory_type": "langchain_buffer"
+            })
         else:
             state["messages"] = [HumanMessage(content=state["user_query"])]
-        
+
         return state
     
     async def _start_new_thread_node(self, state: ConversationState) -> ConversationState:
@@ -279,30 +284,30 @@ class LangGraphConversationManager:
     async def _update_context_node(self, state: ConversationState) -> ConversationState:
         """Node to update conversation context with new interaction"""
         logger.debug("📝 Updating conversation context")
-        
+
         try:
             thread_id = state.get("thread_id")
             user_query = state.get("user_query", "")
             response = state.get("current_response", "")
-            metadata = state.get("metadata", {})
-            
+
             if thread_id and user_query and response:
-                # Add this interaction to context
-                context = self.context_manager.add_context(
-                    thread_id=thread_id,
-                    query=user_query,
-                    response=response,
-                    metadata=metadata
+                # Add messages to LangChain memory (they will be automatically persisted)
+                self.context_manager.add_message_to_memory(
+                    thread_id, HumanMessage(content=user_query)
                 )
-                
-                logger.info("✅ Context updated", extra={
+                self.context_manager.add_message_to_memory(
+                    thread_id, AIMessage(content=response)
+                )
+
+                logger.info("✅ Context updated with LangChain memory", extra={
                     "thread_id": thread_id,
                     "query_length": len(user_query),
-                    "response_length": len(response)
+                    "response_length": len(response),
+                    "memory_type": "persistent_langchain"
                 })
-            
+
             return state
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to update context: {e}")
             return state
