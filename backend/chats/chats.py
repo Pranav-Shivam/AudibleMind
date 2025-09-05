@@ -304,7 +304,7 @@ class ContentProcessor:
 
     def generate_layered_explanation(self, technical_paragraph: str, pranav_persona_desc: str) -> str:
         prompt = self._get_pranav_initial_explanation_prompt(technical_paragraph, pranav_persona_desc)
-        return self.llm_client.generate(prompt)
+        return self.llm_client.generate(prompt, max_tokens=1500)
 
     def _get_pranav_initial_explanation_prompt(self, paragraph: str, pranav_description: str) -> str:
         return f"""You are Pranav, an expert and PhD scholar explaining complex technical concepts.
@@ -343,7 +343,7 @@ class PranavPersona(Persona):
             conversation_history=[f"{t.speaker.value}: {t.text}" for t in history],
             target_audience=target_audience
         )
-        return llm_client.generate(prompt)
+        return llm_client.generate(prompt, max_tokens=1500)
 
     def generate_question(self, llm_client: LLMClient, current_context: str, conversation_history: List[ConversationTurn]) -> str:
         return ""

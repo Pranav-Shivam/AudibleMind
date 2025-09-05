@@ -233,7 +233,7 @@ class LangGraphConversationManager:
                     ollama_client.model_name = model
                 response = ollama_client.make_ollama_call(prompt, temperature=temperature, max_tokens=max_tokens)
             elif provider_str == "openai":
-                openai_client = OpenAIClient(api_key=config.openai.api_key)
+                openai_client = OpenAIClient(api_key=config.openai.api_key, model=model)
                 if model:
                     openai_client.model = model
                 

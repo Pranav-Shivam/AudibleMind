@@ -49,7 +49,7 @@ class OpenAIConfig:
     api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
     # model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
     model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", "500"))
+    max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", "1500"))
     temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
 
 

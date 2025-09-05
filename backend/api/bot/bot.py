@@ -18,25 +18,6 @@ def get_bot_service() -> BotService:
     """Dependency to get BotService instance"""
     return BotService()
 
-def map_model_selection(model: Optional[str]) -> Optional[str]:
-    """
-    Map frontend model selections to actual backend models.
-    
-    This allows showing user-friendly model names in the frontend
-    while using different models in the backend for optimal performance.
-    """
-    model_mapping = {
-        "gpt-3.5-turbo": "gpt-4o",  # Show GPT-3.5-turbo but use GPT-4o
-        # Add more mappings as needed
-    }
-    
-    if model and model in model_mapping:
-        mapped_model = model_mapping[model]
-        logger.info(f"🔄 Model mapped: {model} → {mapped_model}")
-        return mapped_model
-    
-    return model
-
 # ============ API ENDPOINTS ============
 
 @router.post("/chat", response_model=ChatResponse)
@@ -56,21 +37,6 @@ async def chat_endpoint(
     - Each response variant explores different aspects: essence, systems, and applications
     """
     try:
-        # Apply model mapping before processing
-        original_model = request.model
-        mapped_model = map_model_selection(request.model)
-        
-        if mapped_model != original_model:
-            # Create a new request with the mapped model
-            request = ChatRequest(
-                thread_id=request.thread_id,
-                query=request.query,
-                provider=request.provider,
-                model=mapped_model,
-                temperature=request.temperature,
-                max_tokens=request.max_tokens
-            )
-        
         return await bot_service.process_chat_request(request, user["user_id"])
     except Exception as e:
         logger.error(f"❌ Chat endpoint error: {e}")

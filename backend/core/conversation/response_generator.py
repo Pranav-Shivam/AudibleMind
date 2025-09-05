@@ -353,6 +353,10 @@ Response:"""
                 if not self.openai_client:
                     raise ValueError("OpenAI client not configured")
                 
+                # Update the client's model if a specific model was requested
+                if model:
+                    self.openai_client.model = model
+                
                 response = self.openai_client.generate(
                     prompt, temperature=temperature, max_tokens=max_tokens
                 )

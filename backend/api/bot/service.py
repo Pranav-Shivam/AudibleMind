@@ -195,7 +195,10 @@ class BotService:
             else:  # OpenAI
                 if not self.openai_client:
                     raise ValueError("OpenAI client not configured")
-                model_name = model or "gpt-4"
+                model_name = model or config.openai.model
+                # Update the client's model if a specific model was requested
+                if model:
+                    self.openai_client.model = model_name
                 response = self.openai_client.generate(hyde_prompt, temperature=0.8)
             
             questions = self.parse_hyde_questions(response)
@@ -247,7 +250,10 @@ class BotService:
             else:  # OpenAI
                 if not self.openai_client:
                     raise ValueError("OpenAI client not configured")
-                model_name = model or "gpt-4"
+                model_name = model or config.openai.model
+                # Update the client's model if a specific model was requested
+                if model:
+                    self.openai_client.model = model_name
                 response = self.openai_client.generate(
                     response_prompt, temperature=temperature, max_tokens=max_tokens
                 )

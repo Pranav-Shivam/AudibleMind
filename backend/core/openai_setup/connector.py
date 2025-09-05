@@ -1,16 +1,17 @@
 import requests
 import time
 from core.logger import logger, LoggerUtils
+from core.configuration import config
 from typing import List, Dict
 
 class OpenAIClient():
-    def __init__(self, api_key: str, model: str = "gpt-4o"):
+    def __init__(self, api_key: str, model: str = None):
         self.api_key = api_key
-        self.model = model
+        self.model = model or config.openai.model
         self.base_url = "https://api.openai.com/v1"
         self.provider = "openai"
         
-        logger.info(f"🤖 Initializing OpenAI client with model: {model}")
+        logger.info(f"🤖 Initializing OpenAI client with model: {self.model}")
 
     def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 500) -> str:
         messages = [{"role": "user", "content": prompt}]
